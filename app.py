@@ -47,9 +47,10 @@ def game_list():
 @app.route('/addUser', methods=['POST'])
 def add_user():
     steamId = request.form.get("steamId")
-    db_add_user(steamId)
-    #db_add_friends(steamId)
-    return jsonify("")
+    db_add_user_and_games(steamId)
+    stats = db_get_total_playtime(steamId)
+    #db_add_friends_and_games(steamId)
+    return jsonify(stats)
 
 def api_get_owned_games(steamId):
     url = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v1/"
@@ -66,7 +67,7 @@ def api_users_summary(steamIdList):
     r = requests.get(url + apiKey + "&steamids=" + steamIdList)
     return r.json()
 
-def db_add_user(steamId):
+def db_add_user_and_games(steamId):
     summary = api_users_summary(steamId)
     summary = summary['response']
     summary['players'] = [dict(steamid=key['steamid'], personaname=key['personaname'], avatarmedium=key['avatarmedium']) for key in summary['players']]
@@ -74,36 +75,95 @@ def db_add_user(steamId):
     id = summary['players'][0]['steamid']
     name = summary['players'][0]['personaname']
     avatar_url = summary['players'][0]['avatarmedium']
+    data = [(id, name, avatar_url)]
 
-    record_type = param_types.Struct([
-        param_types.StructField('steamId', param_types.STRING),
-        param_types.StructField('name', param_types.STRING),
-        param_types.StructField('avatar_url', param_types.STRING)
-    ])
-    record_value = (id, name, avatar_url)
-
-    def write_user(transaction):
-        row_ct = transaction.execute_update(
-            "INSERT Users (steamId, name, avatar_url) "
-            "VALUES (@values.steamId, @values.name, @values.avatar_url)",
-            params={'name': record_value},
-            param_types={'name': record_type}
-        )
-        print("{} record(s) updated.".format(row_ct))
-
-    global database
-    database.run_in_transaction(write_user)
-
+    with database.batch() as batch:
+        batch.insert_or_update(
+            table='Users',
+            columns=('steamId', 'name', 'avatar_url',),
+            values=data)
+    print('Inserted / Updated User ', steamId)
+    db_add_games(id)
     return
 
-def db_add_friends(steamId):
-    friends = api_user_friends(steamId)
-    steamIdList = friends #comma deli
+def db_add_friends_and_games(steamId):
+    friendList = api_user_friends(steamId)
+    friendList = friendList['friendslist']
+    friendList['friends'] = [dict(steamid=key['steamid'])for key in friendList['friends']]
+    length = len(friendList['friends'])
+    steamIdList = ""
+    for i in range(length):
+        id = friendList['friends'][i]['steamid']
+        steamIdList += id
+        if i < length-1:
+            id += ","
+
     summary = api_users_summary(steamIdList)
-    #db add steamId
-    #db add name
-    #db add avatar_url
+    summary = summary['response']
+    summary['players'] = [dict(steamid=key['steamid'], personaname=key['personaname'], avatarmedium=key['avatarmedium']) for key in summary['players']]
+
+    length = len(summary['players'])
+    data = []
+    for i in range(length):
+        id = summary['players'][i]['steamid']
+        name = summary['players'][i]['personaname']
+        avatar_url = summary['players'][i]['avatarmedium']
+        data += [(id, name, avatar_url)]
+
+    with database.batch() as batch:
+        batch.insert_or_update(
+            table='Users',
+            columns=('steamId', 'name', 'avatar_url',),
+            values=data)
+    print('Inserted / Updated Friends for ', steamId)
+
+    for i in range(length):
+        id = summary['players'][i]['steamid']
+        db_add_games(id)
     return
+
+def db_add_games(steamId):
+    summary = api_get_owned_games(steamId)
+    summary = summary['response']
+    summary['games'] = [dict(appid=key['appid'], name=key['name'], playtime_forever=key['playtime_forever']) for key in summary['games']]
+
+    length = len(summary['games'])
+    data = []
+    for i in range(length):
+        appId = summary['games'][i]['appid']
+        name = summary['games'][i]['name']
+        playtime_forever = summary['games'][i]['playtime_forever']
+        data += [(appId, steamId, name, playtime_forever)]
+
+    with database.batch() as batch:
+        batch.insert_or_update(
+            table='Games',
+            columns=('appId', 'steamId', 'name', 'playtime',),
+            values=data)
+    print('Inserted / Updated Games for ', steamId)
+    return
+
+def db_get_total_playtime(steamId):
+    name = ''
+    avatar = ''
+    playtime = 0
+
+    with database.snapshot() as snapshot:
+        query = "SELECT name, avatar_url FROM Users WHERE steamId =" + "'" + steamId + "'"
+        results = snapshot.execute_sql(query)
+        for row in results:
+            name = row[0]
+            avatar = row[1]
+
+    with database.snapshot() as snapshot:
+        query = "SELECT SUM(playtime) FROM Games WHERE steamId = " + "'" + steamId + "'"
+        results = snapshot.execute_sql(query)
+        for row in results:
+            playtime = row[0]/60
+
+    res = dict(name=name, avatar=avatar, playtime=playtime)
+    return res
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')

@@ -12,4 +12,4 @@ steps:
   - --filename=deployment.yaml
   - --image=gcr.io/cc-steam-chat/steam-ms:latest
   - --location=us-central1-c
-  - --cluster=sc-cluster
+  - --cluster=steamchat-cluster

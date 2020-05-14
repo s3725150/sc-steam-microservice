@@ -10,8 +10,8 @@ spec:
     port: 80
     targetPort: 5000
   type: LoadBalancer
-  clusterIP: 10.0.13.95
-  loadBalancerIP: 34.72.96.84
+  clusterIP: 10.121.10.165
+  loadBalancerIP: 35.239.38.150
 
 ---
 apiVersion: apps/v1

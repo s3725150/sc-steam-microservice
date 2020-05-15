@@ -1,10 +1,13 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from google.cloud import spanner
-from google.cloud.spanner import param_types
 import requests
 
-
+"""
+--------------------------------
+Initialization
+--------------------------------
+"""
 # configuration
 DEBUG = True
 
@@ -15,6 +18,7 @@ app.config.from_object(__name__)
 # enable CORS
 CORS(app, resources={r'/*': {'origins': '*'}})
 
+# Steam Web API key
 apiKey = "?key=62F5907DB2B29AB7265722A6AD958E32"
 
 # Spanner Init
@@ -34,7 +38,14 @@ database_id = 'steam_data'
 database = instance.database(database_id)
 
 
-# Respond with the list {appid, logo, name}  games user owns
+
+
+"""
+--------------------------------
+GET/POST Routes
+--------------------------------
+"""
+# Respond with the list {appid, logo, name} games user owns
 @app.route('/gameList', methods=['POST'])
 def game_list():
     steamId = request.form.get("steamId")
@@ -43,15 +54,24 @@ def game_list():
     res['games'] = [dict(appid=key['appid'],img_logo_url=key['img_logo_url'],name=key['name']) for key in res['games']]
     return jsonify(res)
 
-# Res
-@app.route('/addUser', methods=['POST'])
-def add_user():
+# Add user and games to DB then respond with stats
+@app.route('/myStats', methods=['POST'])
+def my_stats():
     steamId = request.form.get("steamId")
     db_add_user_and_games(steamId)
-    stats = db_get_total_playtime(steamId)
-    #db_add_friends_and_games(steamId)
+    stats = get_name_and_avatar(steamId)
+    stats = merge(stats, get_total_playtime(steamId))
+    stats = merge(stats, get_total_and_unplayed_games(steamId))
+    stats = merge(stats, get_top_played(steamId))
     return jsonify(stats)
 
+
+
+"""
+--------------------------------
+Steam Web API calls
+--------------------------------
+"""
 def api_get_owned_games(steamId):
     url = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v1/"
     r = requests.get(url + apiKey + "&steamid=" + steamId + "&include_appinfo=1")
@@ -67,6 +87,14 @@ def api_users_summary(steamIdList):
     r = requests.get(url + apiKey + "&steamids=" + steamIdList)
     return r.json()
 
+
+
+
+"""
+--------------------------------
+Insert/Update Google Spanner DB
+--------------------------------
+"""
 def db_add_user_and_games(steamId):
     summary = api_users_summary(steamId)
     summary = summary['response']
@@ -143,10 +171,17 @@ def db_add_games(steamId):
     print('Inserted / Updated Games for ', steamId)
     return
 
-def db_get_total_playtime(steamId):
+
+
+
+"""
+--------------------------------
+Query DB & Analytics
+--------------------------------
+"""
+def get_name_and_avatar(steamId):
     name = ''
     avatar = ''
-    playtime = 0
 
     with database.snapshot() as snapshot:
         query = "SELECT name, avatar_url FROM Users WHERE steamId =" + "'" + steamId + "'"
@@ -155,15 +190,61 @@ def db_get_total_playtime(steamId):
             name = row[0]
             avatar = row[1]
 
+    res = dict(name=name, avatar=avatar)
+    return res
+
+def get_total_playtime(steamId):
+    playtime = 0
+
     with database.snapshot() as snapshot:
         query = "SELECT SUM(playtime) FROM Games WHERE steamId = " + "'" + steamId + "'"
         results = snapshot.execute_sql(query)
         for row in results:
             playtime = row[0]/60
 
-    res = dict(name=name, avatar=avatar, playtime=playtime)
+    res = dict(playtime=int(playtime))
     return res
 
+def get_total_and_unplayed_games(steamId):
+    total = 0
+    unplayed = 0
+
+    with database.snapshot() as snapshot:
+        query = "SELECT COUNT(appid) FROM Games WHERE steamId = " + "'" + steamId + "'"
+        results = snapshot.execute_sql(query)
+        for row in results:
+            total = row[0]
+
+    with database.snapshot() as snapshot:
+        query = "SELECT COUNT(appid) FROM Games WHERE steamId = " + "'" + steamId + "' AND playtime < 10"
+        results = snapshot.execute_sql(query)
+        for row in results:
+            unplayed = row[0]
+
+    unplayed_percent = (unplayed/total)*100
+    res = dict(total=total, unplayed=unplayed, unplayed_percent=int(unplayed_percent))
+    return res
+
+def get_top_played(steamId):
+
+    with database.snapshot() as snapshot:
+        query = "SELECT name, playtime FROM Games WHERE steamId = " + "'" + steamId + "' ORDER BY playtime DESC LIMIT 10"
+        results = snapshot.execute_sql(query)
+        gameList = []
+        res = dict(game=[])
+        for row in results:
+            name = row[0]
+            playtime = row[1]/60
+            game = dict(name=name, playtime=int(playtime))
+            gameList.append(game)
+        res = dict(topPlayed=gameList)
+    return res
+
+
+
+def merge(dict1, dict2):
+    res = dict(dict1, **dict2)
+    return res
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')

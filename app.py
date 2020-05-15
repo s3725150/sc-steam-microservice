@@ -231,7 +231,6 @@ def get_top_played(steamId):
         query = "SELECT name, playtime FROM Games WHERE steamId = " + "'" + steamId + "' ORDER BY playtime DESC LIMIT 10"
         results = snapshot.execute_sql(query)
         gameList = []
-        res = dict(game=[])
         for row in results:
             name = row[0]
             playtime = row[1]/60

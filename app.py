@@ -285,18 +285,18 @@ def get_played_percent_rank(steamId):
 
 def get_global_top_playtime():
     with database.snapshot() as snapshot:
-        query = ("SELECT t1.name1 AS id, t2.avatar, t1.playsum "
+        query = ("SELECT t2.sname, t2.avatar, t1.playsum "
                  "FROM ( "
-                 "SELECT g.steamId AS name1, SUM(g.playtime) AS playsum "
+                 "SELECT g.steamId AS id1, SUM(g.playtime) AS playsum "
                  "FROM Games g "
-                 "GROUP BY g.steamId "
+                 "GROUP BY id1 "
                  " ) t1 "
                  "LEFT JOIN ( "
-                 "SELECT u.steamId AS name2, u.avatar_url AS avatar "
+                 "SELECT u.steamId AS id2, u.name AS sname, u.avatar_url AS avatar "
                  "FROM Users u "
-                 "GROUP BY u.steamId, u.avatar_url "
+                 "GROUP BY id2, avatar, sname "
                  " ) t2 "
-                 "ON t2.name2 = t1.name1 "
+                 "ON t2.id2 = t1.id1 "
                  "ORDER BY t1.playsum DESC LIMIT 10 ")
         results = snapshot.execute_sql(query)
         resList = []
@@ -311,18 +311,18 @@ def get_global_top_playtime():
 
 def get_global_top_game_count():
     with database.snapshot() as snapshot:
-        query = ("SELECT t1.name1 AS id, t2.avatar, t1.gamecount "
+        query = ("SELECT t2.sname, t2.avatar, t1.gamecount "
                  "FROM ( "
-                 "SELECT g.steamId AS name1, COUNT(g.appId) AS gamecount "
+                 "SELECT g.steamId AS id1, SUM(g.appId) AS gamecount "
                  "FROM Games g "
-                 "GROUP BY g.steamId "
+                 "GROUP BY id1 "
                  " ) t1 "
                  "LEFT JOIN ( "
-                 "SELECT u.steamId AS name2, u.avatar_url AS avatar "
+                 "SELECT u.steamId AS id2, u.name AS sname, u.avatar_url AS avatar "
                  "FROM Users u "
-                 "GROUP BY u.steamId, u.avatar_url "
+                 "GROUP BY id2, avatar, sname "
                  " ) t2 "
-                 "ON t2.name2 = t1.name1 "
+                 "ON t2.id2 = t1.id1 "
                  "ORDER BY t1.gamecount DESC LIMIT 10 ")
         results = snapshot.execute_sql(query)
         resList = []
@@ -337,25 +337,25 @@ def get_global_top_game_count():
 
 def get_global_top_played_percent():
     with database.snapshot() as snapshot:
-        query = ("SELECT t1.name1 AS id, t3.avatar, FLOOR((t1.played / t2.total)*100) AS percent "
+        query = ("SELECT t3.sname, t3.avatar, FLOOR((t1.played / t2.total)*100) AS percent "
                  "FROM ( "
-                 "SELECT g.steamId AS name1, COUNT(g.appId) AS played "
+                 "SELECT g.steamId AS id1, COUNT(g.appId) AS played "
                  "FROM Games g "
                  "WHERE playtime >=10 "
-                 "GROUP BY g.steamId "
+                 "GROUP BY id1 "
                  " ) t1 "
                  "LEFT JOIN ( "
-                 "SELECT g.steamId AS name2, COUNT(g.appId) AS total "
+                 "SELECT g.steamId AS id2, COUNT(g.appId) AS total "
                  "FROM Games g "
-                 "GROUP BY g.steamId "
+                 "GROUP BY id2 "
                  " ) t2 "
-                 "ON t2.name2 = t1.name1 "
+                 "ON t2.id2 = t1.id1 "
                  "LEFT JOIN ( "
-                 "SELECT u.steamId AS name3, u.avatar_url AS avatar "
+                 "SELECT u.steamId AS id3, u.name AS sname, u.avatar_url AS avatar "
                  "FROM Users u "
-                 "GROUP BY u.steamId, u.avatar_url "
+                 "GROUP BY id3, avatar, sname "
                  " ) t3 "
-                 "ON t3.name3 = t2.name2 "
+                 "ON t3.id3 = t2.id2 "
                  "ORDER BY percent DESC LIMIT 10")
 
         results = snapshot.execute_sql(query)

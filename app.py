@@ -313,7 +313,7 @@ def get_global_top_game_count():
     with database.snapshot() as snapshot:
         query = ("SELECT t2.sname, t2.avatar, t1.gamecount "
                  "FROM ( "
-                 "SELECT g.steamId AS id1, SUM(g.appId) AS gamecount "
+                 "SELECT g.steamId AS id1, COUNT(g.appId) AS gamecount "
                  "FROM Games g "
                  "GROUP BY id1 "
                  " ) t1 "

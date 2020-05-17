@@ -225,7 +225,7 @@ def db_add_games(steamId):
         for i in range(length):
             appId = summary['games'][i]['appid']
             name = summary['games'][i]['name']
-            img_logo_url = "http://media.steampowered.com/steamcommunity/public/images/apps/summary" + str(appId) +"/"+ str(['games'][i]['img_logo_url']) + ".jpg"
+            img_logo_url = "http://media.steampowered.com/steamcommunity/public/images/apps/" + str(appId) +"/"+ str(summary['games'][i]['img_logo_url']) + ".jpg"
             playtime_forever = summary['games'][i]['playtime_forever']
             data += [(appId, steamId, name, img_logo_url, playtime_forever)]
 

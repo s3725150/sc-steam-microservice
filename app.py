@@ -117,19 +117,26 @@ Steam Web API calls
 
 def api_get_steamId(data):
     steamId = "err"
-    url = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/"
+
+    url = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/"
     r = requests.get(url + apiKey + "&steamids=" + data)
-    if r is not None:
+    r = r.json()
+    r = r['response']
+    r = r['players']
+    if r:
         steamId = data
+
     url = "https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/"
     r = requests.get(url + apiKey + "&vanityurl=" + data)
-    if r is not None:
-        steamId = r
+    r = r.json()
+    r=r['response']
+    if r['success'] == 1:
+        steamId = r['steamid']
     return steamId
 
 def api_get_owned_games(steamId):
     url = "https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/"
-    r = requests.get(url + apiKey + "&vanityurl=" + input)
+    r = requests.get(url + apiKey + "&steamid=" + steamId + "&include_appinfo=1")
     return r.json()
 
 def api_user_friends(steamId):

@@ -51,7 +51,6 @@ def game_list():
     steamId = api_get_steamId(request.form.get("steamId"))
     res = "error"
     if steamId != "err":
-        steamId = request.form.get("steamId")
         res = api_get_owned_games(steamId)
         res = res['response']
         res['games'] = [dict(appid=key['appid'],img_logo_url=key['img_logo_url'],name=key['name']) for key in res['games']]

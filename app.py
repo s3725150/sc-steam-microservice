@@ -218,20 +218,21 @@ def db_add_games(steamId):
     summary = api_get_owned_games(steamId)
     summary = summary['response']
     if summary:
-        summary['games'] = [dict(appid=key['appid'], name=key['name'], playtime_forever=key['playtime_forever']) for key in summary['games']]
+        summary['games'] = [dict(appid=key['appid'], name=key['name'], img_logo_url=key['img_logo_url'], playtime_forever=key['playtime_forever']) for key in summary['games']]
 
         length = len(summary['games'])
         data = []
         for i in range(length):
             appId = summary['games'][i]['appid']
             name = summary['games'][i]['name']
+            img_logo_url = "http://media.steampowered.com/steamcommunity/public/images/apps/summary" + appId +"/"+ ['games'][i]['img_logo_url'] + ".jpg"
             playtime_forever = summary['games'][i]['playtime_forever']
-            data += [(appId, steamId, name, playtime_forever)]
+            data += [(appId, steamId, name, img_logo_url, playtime_forever)]
 
         with database.batch() as batch:
             batch.insert_or_update(
                 table='Games',
-                columns=('appId', 'steamId', 'name', 'playtime',),
+                columns=('appId', 'steamId', 'name', 'img_logo_url', 'playtime',),
                 values=data)
         print('Inserted / Updated Games for ', steamId)
     return

@@ -103,6 +103,13 @@ def global_stats():
     return jsonify(res)
 
 # Testing
+@app.route('/popularGame', methods=['GET'])
+def popular_game():
+    res = get_total_users()
+    res = merge(res, get_global_most_popular_game())
+    return jsonify(res)
+
+# Testing
 @app.route('/test', methods=['POST'])
 def test():
     res = get_global_top_playtime()
@@ -245,6 +252,17 @@ def db_add_games(steamId):
 Query DB & Analytics
 --------------------------------
 """
+def get_total_users():
+    with database.snapshot() as snapshot:
+        query = "SELECT COUNT(steamId) FROM Users"
+        results = snapshot.execute_sql(query)
+
+        total = 0
+        for row in results:
+            total = int(row[0])
+        res = dict(total_users=total)
+    return res
+
 def get_name_and_avatar(steamId):
     name = ''
     avatar = ''
@@ -311,6 +329,24 @@ def get_game_count_rank(steamId):
     return
 def get_played_percent_rank(steamId):
     return
+
+def get_global_most_popular_game():
+    with database.snapshot() as snapshot:
+        query = ("SELECT name, img_logo_url, SUM(playtime) AS p, COUNT(*) AS c "
+                 "FROM Games "
+                 "GROUP BY name, img_logo_url "
+                 "ORDER BY c DESC, p DESC LIMIT 1 ")
+        results = snapshot.execute_sql(query)
+        resList = []
+        for row in results:
+            name = row[0]
+            img_logo_url = row[1]
+            playtime = row[2]/60
+            count = row[3]
+            entry = dict(name=name, img_logo_url=img_logo_url, playtime=int(playtime), count=count)
+            resList.append(entry)
+        res = dict(popular_game=resList)
+    return res
 
 def get_global_top_playtime():
     with database.snapshot() as snapshot:

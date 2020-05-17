@@ -48,50 +48,59 @@ GET/POST Routes
 # Respond with the list {appid, logo, name} games user owns
 @app.route('/gameList', methods=['POST'])
 def game_list():
-    steamId = request.form.get("steamId")
-    res = api_get_owned_games(steamId)
-    res = res['response']
-    res['games'] = [dict(appid=key['appid'],img_logo_url=key['img_logo_url'],name=key['name']) for key in res['games']]
+    steamId = api_get_steamId(request.form.get("steamId"))
+    res = "error"
+    if steamId != "err":
+        steamId = request.form.get("steamId")
+        res = api_get_owned_games(steamId)
+        res = res['response']
+        res['games'] = [dict(appid=key['appid'],img_logo_url=key['img_logo_url'],name=key['name']) for key in res['games']]
     return jsonify(res)
 
 # Add user and games to DB then respond with stats
 @app.route('/myStats', methods=['POST'])
 def my_stats():
-    steamId = request.form.get("steamId")
-    db_add_user_and_games(steamId)
-    stats = get_name_and_avatar(steamId)
-    stats = merge(stats, get_total_playtime(steamId))
-    stats = merge(stats, get_total_and_unplayed_games(steamId))
-    stats = merge(stats, get_top_played_games(steamId))
+    steamId = api_get_steamId(request.form.get("steamId"))
+    stats = "error"
+    if steamId != "err":
+        db_add_user_and_games(steamId)
+        stats = get_name_and_avatar(steamId)
+        stats = merge(stats, get_total_playtime(steamId))
+        stats = merge(stats, get_total_and_unplayed_games(steamId))
+        stats = merge(stats, get_top_played_games(steamId))
     return jsonify(stats)
 
 # Add friends and their games to DB then respond with stats
 @app.route('/friendStats', methods=['POST'])
 def friend_stats():
-    steamId = request.form.get("steamId")
-    friendIdList = db_add_friends_and_games(steamId)
-    statList = []
-    for sid in friendIdList:
-        stats = get_name_and_avatar(sid)
-        stats = merge(stats, get_total_playtime(sid))
-        stats = merge(stats, get_total_and_unplayed_games(sid))
-        statList.append(stats)
-    res = dict(friend_stats=statList)
+    steamId = api_get_steamId(request.form.get("steamId"))
+    res = "error"
+    if steamId != "err":
+        friendIdList = db_add_friends_and_games(steamId)
+        statList = []
+        for sid in friendIdList:
+            stats = get_name_and_avatar(sid)
+            stats = merge(stats, get_total_playtime(sid))
+            stats = merge(stats, get_total_and_unplayed_games(sid))
+            statList.append(stats)
+        res = dict(friend_stats=statList)
     return jsonify(res)
 
 # Global Stats
 @app.route('/globalStats', methods=['POST'])
 def global_stats():
-    steamId = request.form.get("steamId")
-    # myStats = get_name_and_avatar(steamId)
-    # myStats = merge(myStats, get_total_playtime_rank(steamId))
-    # myStats = merge(myStats, get_game_count_rank(steamId))
-    # myStats = merge(myStats, get_played_percent_rank(steamId))
-    # res = dict(user_stats=myStats)
-    # res = merge(res, get_global_top_playtime())
-    res = get_global_top_playtime()
-    res = merge(res, get_global_top_game_count())
-    res = merge(res, get_global_top_played_percent())
+    steamId = api_get_steamId(request.form.get("steamId"))
+    res = "error"
+    if steamId != "err":
+        # myStats = get_name_and_avatar(steamId)
+        # myStats = merge(myStats, get_total_playtime_rank(steamId))
+        # myStats = merge(myStats, get_game_count_rank(steamId))
+        # myStats = merge(myStats, get_played_percent_rank(steamId))
+        # res = dict(user_stats=myStats)
+        # res = merge(res, get_global_top_playtime())
+        res = get_global_top_playtime()
+        res = merge(res, get_global_top_game_count())
+        res = merge(res, get_global_top_played_percent())
     return jsonify(res)
 
 # Testing
@@ -105,18 +114,31 @@ def test():
 Steam Web API calls
 --------------------------------
 """
+
+def api_get_steamId(data):
+    steamId = "err"
+    url = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/"
+    r = requests.get(url + apiKey + "&steamids=" + data)
+    if r is not None:
+        steamId = data
+    url = "https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/"
+    r = requests.get(url + apiKey + "&vanityurl=" + data)
+    if r is not None:
+        steamId = r
+    return steamId
+
 def api_get_owned_games(steamId):
-    url = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v1/"
-    r = requests.get(url + apiKey + "&steamid=" + steamId + "&include_appinfo=1")
+    url = "https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/"
+    r = requests.get(url + apiKey + "&vanityurl=" + input)
     return r.json()
 
 def api_user_friends(steamId):
-    url = "http://api.steampowered.com/ISteamUser/GetFriendList/v0001/"
+    url = "https://api.steampowered.com/ISteamUser/GetFriendList/v0001/"
     r = requests.get(url + apiKey + "&steamid=" + steamId + "&relationship=friend")
     return r.json()
 
 def api_users_summary(steamIdList):
-    url = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/"
+    url = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/"
     r = requests.get(url + apiKey + "&steamids=" + steamIdList)
     return r.json()
 

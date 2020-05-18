@@ -275,7 +275,7 @@ def get_total_playtime_rank(steamId):
         for row in results:
             rank = int(row[0]) + 1       
 
-    resList=[dict(playtime=playtime, rank=rank)]
+    resList=[dict(playtime=int(playtime/60), rank=rank)]
     res = dict(playtime_rank=resList)
     return res
 

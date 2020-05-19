@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from google.cloud import spanner, secretmanager
-import requests, psycopg2, sqlalchemy, os
+import requests, sqlalchemy, os
 
 """
 --------------------------------
@@ -29,9 +29,9 @@ cloud_sql_connection_name = 'cc-steam-chat:us-central1:steam-chat'
 # managing a pool of connections to your database
 db = sqlalchemy.create_engine(
     # Equivalent URL:
-    # postgres+psycopg2://<db_user>:<db_pass>@/<db_name>?unix_sock=/cloudsql/<cloud_sql_instance_name>/.s.PGSQL.5432
+    # postgres+pg8000://<db_user>:<db_pass>@/<db_name>?unix_sock=/cloudsql/<cloud_sql_instance_name>/.s.PGSQL.5432
     sqlalchemy.engine.url.URL(
-        drivername='postgres+psycopg2',
+        drivername='postgres+pg8000',
         username=db_user,
         password=db_pass,
         database=db_name,

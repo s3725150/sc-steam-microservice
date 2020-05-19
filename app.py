@@ -124,6 +124,7 @@ def game_list():
 # Add user and games to DB then respond with user stats
 @app.route('/myStats', methods=['POST'])
 def my_stats():
+    db_add_user_and_games2(request.form.get("steamId"))
     steamId = api_get_steamId(request.form.get("steamId"))
     stats = "error"
     if steamId != "err":
@@ -222,6 +223,7 @@ def db_add_user_and_games(steamId):
     return
 
 def db_add_user_and_games2(steamId):
+    print('IN ADD USER')
     summary = api_users_summary(steamId)
     summary = summary['response']
     summary['players'] = [dict(steamid=key['steamid'], personaname=key['personaname'], avatarmedium=key['avatarmedium']) for key in summary['players']]

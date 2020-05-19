@@ -37,7 +37,7 @@ sdatabase_id = 'steam_data'
 sdatabase = instance.database(sdatabase_id)
 
 # postgres init
-db_password = os.environ.get("DB_PASS")
+db_pass = os.environ.get("DB_PASS")
 db_name = os.environ.get("DB_NAME")
 db_user = os.environ.get("DB_USER")
 cloud_sql_connection_name = 'cc-steam-chat:us-central1:steam-chat'

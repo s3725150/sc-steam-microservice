@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "cc-steam-chat",
+  "private_key_id": "781210c4a8ed5467bde372a22d33ca42d9c43102",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC3D62402GZZYwE\nKyCrVJFMYUWdTUC5sHBikOGrZHiflIEEkoazIS75OcHEmvZOf/Oy5Xg6qbLbeOAu\nrb2RnUgh3YEjNC/+40/ZAf6dLFr/e8jNuapmmf2KEocmpA7nHo3GTg6z/4ormHdV\nh/7f8BUjkOG4iJGpdfwkZtceOUvHYfijmBvh5+u6iRjgqHIA0HcEft5PUvE5UUMk\nK/DUnfA+Ka8UE0olcqX9aZ7ZYB2Ll//I2gyy49FQ0vuULv37rnt7yIOOA9TQNLtG\nB/kj+rcI+V+MHZP00rWtnICQJH4rzdGbLKfhlIqASbBhteT/M+nVrvK7UUZ2lFlm\nksrTXFmPAgMBAAECggEAEGTmqYv0stvCdruBPEn69GlgGXHjsnC35kitwFjjgv2C\n5TmIhES1twgr73ZZSWpxrrtlawuFKXaUmfMuH2GDv9SqGtCZQ8bW52S9Iq8bbyns\nyWli3OsJjVksO8YRhGba5FmO1rvmtqsu2yNH+VImjBeoWPH4gyg+O0+I3S7dN679\na2bhnnjFURHu7qGtXUj5Munts44/dI6BOk4v18WeUpK2wAEENZismW6Ed+HxaTtx\n2kEtTQ+5MPUOLpqlNg15le1JHuhgy8iw2kXfJl7px1n7HlfKpzVet0py87WL08Dt\nDDGV58qVjK3QuDetf3dJxcFE/4bz0TBVvQX05CaNkQKBgQDzYLV42HeBBgK1mB8G\nYjvK6lbhZvqOkhJJFB2//wBrmW+oFx1LRUPx/bCPhZO6cnhDmQ9nFNdpk3HDuBnZ\nx9DDbdN5i4y/46f8LAB+HLq5WOhh+sqejcePTyGimmp2L0qbEUUJ5JyFSrptWaOz\ns27vbN35u18x56Lt7wlf5uzUEwKBgQDAjifxt1n0TJu+LNJiS7FVhH+4NNFWF1y7\nvdXz2+KEVqiOtkab47h0yKV0K8q5vbd1l3yS0QlJ5KRox01PuEs7cGzNUgue/hs+\nTPpQ2StujvHqELMrmgXQe8Zm6Xl/Wr7zmRdHLnrDGYhTo8A4siqj5YRY8OiQvXM8\nyg6YLSu8FQKBgQCizNs3hh2SejHPxX1jaMy0dMM/LgKG4iFHLySjbPGcCFxPZX7b\n/e5wbpHvv5vNSYs3NKi//IoH/nBISttH+cilIc8na/jv11pkbg66TX9+QoHYIMnu\n+8o1C+rk+UQj4IiYaBn1fy5QX2eLhD3kFDAuCnYF+pe4K0mqvY5Yz4E2bwKBgEvc\ntegJcKtLM2Dtj8WiRK+IkDkmtgLRGXvuAskcrFWvPqFbNt5cDWQVWPo39prPH+R4\nVmARczNlnVCalN7/oMQ+Ot95n5J4UottEIGhzfa04qJxCeX3vKqy2SvaeD+wpOKc\nQguNSFhtSsSJE0ZDC4Ge/1F7OGUt/qTIho913HExAoGBANHu2aqohvO5QAniytAL\nDbuY8abJ2yEu3fr83Nm5ajuCwSwzMCdNpAFvQUns/fTR7KTGX8xNp3WGJnygYgPH\nzznds3m2d49NmgY5GqyzHQ4YlAO/i90pzWvqP38n0uFS5UN9oqasC0PYHaVk+o5+\n+g+H7gavs4/aCHImBoKoxZc7\n-----END PRIVATE KEY-----\n",
+  "client_email": "cloudproxy@cc-steam-chat.iam.gserviceaccount.com",
+  "client_id": "111192560749921598091",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/cloudproxy%40cc-steam-chat.iam.gserviceaccount.com"
+}

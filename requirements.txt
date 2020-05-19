@@ -4,4 +4,5 @@ requests
 google-cloud-spanner
 google-cloud-secret-manager
 psycopg2-binary
+pg8000
 SQLAlchemy

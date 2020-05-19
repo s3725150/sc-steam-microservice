@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from google.cloud import spanner, secretmanager
-import requests, psycopg2, sqlalchemy, os
+import requests, sqlalchemy, os
 
 
 """
@@ -40,7 +40,47 @@ sdatabase = instance.database(sdatabase_id)
 db_password = os.environ.get("DB_PASS")
 db_name = os.environ.get("DB_NAME")
 db_user = os.environ.get("DB_USER")
-db = sqlalchemy.create_engine('postgresql+psycopg2://' + db_user + ':' + db_password + '@/?host=/cloudsql/cc-steam-chat:us-central1:steam-chat')
+cloud_sql_connection_name = 'cc-steam-chat:us-central1:steam-chat'
+
+
+# [START cloud_sql_postgres_sqlalchemy_create]
+# The SQLAlchemy engine will help manage interactions, including automatically
+# managing a pool of connections to your database
+db = sqlalchemy.create_engine(
+    # Equivalent URL:
+    # postgres+pg8000://<db_user>:<db_pass>@/<db_name>?unix_sock=/cloudsql/<cloud_sql_instance_name>/.s.PGSQL.5432
+    sqlalchemy.engine.url.URL(
+        drivername='postgres+pg8000',
+        username=db_user,
+        password=db_pass,
+        database=db_name,
+        query={
+            'unix_sock': '/cloudsql/{}/.s.PGSQL.5432'.format(
+                cloud_sql_connection_name)
+        }
+    ),
+
+    # Pool size is the maximum number of permanent connections to keep.
+    pool_size=5,
+    # Temporarily exceeds the set pool_size if no connections are available.
+    max_overflow=2,
+    # The total number of concurrent connections for your application will be
+    # a total of pool_size and max_overflow.
+    # [END cloud_sql_postgres_sqlalchemy_limit]
+
+
+    # 'pool_timeout' is the maximum number of seconds to wait when retrieving a
+    # new connection from the pool. After the specified amount of time, an
+    # exception will be thrown.
+    pool_timeout=30,  # 30 seconds
+    # [END cloud_sql_postgres_sqlalchemy_timeout]
+
+    # 'pool_recycle' is the maximum number of seconds a connection can persist.
+    # Connections that live longer than the specified amount of time will be
+    # reestablished
+    pool_recycle=1800,  # 30 minutes
+)
+
 
 
 
@@ -192,6 +232,7 @@ def db_add_user_and_games2(steamId):
     try:
         with db.connect() as conn:
             conn.execute(stmt)
+            print('CONNECTION')
     except Exception as e:
         return 'Error: {}'.format(str(e))
 

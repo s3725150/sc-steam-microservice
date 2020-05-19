@@ -54,3 +54,14 @@ spec:
         command:
           - "/cloud_sql_proxy"
           - "-instances=cc-steam-chat:us-central1:steam-chat=tcp:5432"
+          - "-credential_file=/secrets/service_account.json"
+        securityContext:
+          allowPrivilegeEscalation: false
+        volumeMounts:
+        - name: sql-volume
+          mountPath: /secrets/
+          readOnly: true
+      volumes:
+      - name: sql-volume
+        secret:
+          secretName: sql-secret

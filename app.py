@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from google.cloud import spanner
+from google.cloud import spanner, secretmanager
 import requests
 
 """
@@ -18,8 +18,6 @@ app.config.from_object(__name__)
 # enable CORS
 CORS(app, resources={r'/*': {'origins': '*'}})
 
-# Steam Web API key
-apiKey = "?key=62F5907DB2B29AB7265722A6AD958E32"
 
 # Spanner Init
 # Instantiate a client.
@@ -36,6 +34,17 @@ database_id = 'steam_data'
 
 # Get a Cloud Spanner database by ID.
 database = instance.database(database_id)
+
+
+# Secrets Init
+# GCP project in which to store secrets in Secret Manager.
+project_id = 'cc-steam-chat'
+
+# Create the Secret Manager client.
+client = secretmanager.SecretManagerServiceClient()
+
+# Get the Steam Web API key
+apiKey = "?key=" + secrets.access_secret_version("projects/"+project_id+"/secrets/steam_api_key/versions/1").payload.data.decode("utf-8")
 
 
 

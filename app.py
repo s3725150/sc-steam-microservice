@@ -20,71 +20,32 @@ app.config.from_object(__name__)
 CORS(app, resources={r'/*': {'origins': '*'}})
 
 
-# Spanner Init
-# Instantiate a client.
-#spanner_client = spanner.Client()
-sdatabase = ''
-# Your Cloud Spanner instance ID.
-#instance_id = 'steam-chat'
-
-# Get a Cloud Spanner instance by ID.
-#instance = spanner_client.instance(instance_id)
-
-# Your Cloud Spanner database ID.
-#sdatabase_id = 'steam_data'
-
-# Get a Cloud Spanner database by ID.
-#sdatabase = instance.database(sdatabase_id)
-
 # postgres init
-db_pass = os.environ.get("DB_PASS")
-print(db_pass)
-db_name = os.environ.get("DB_NAME")
-print(db_name)
 db_user = os.environ.get("DB_USER")
-print(db_user)
+db_pass = os.environ.get("DB_PASS")
+db_name = os.environ.get("DB_NAME")
 cloud_sql_connection_name = 'cc-steam-chat:us-central1:steam-chat'
 
+db_user = 'postgres'
+db_pass = 'root'
+db_name = 'steam_data'
 
-# [START cloud_sql_postgres_sqlalchemy_create]
 # The SQLAlchemy engine will help manage interactions, including automatically
 # managing a pool of connections to your database
 db = sqlalchemy.create_engine(
-    # Equivalent URL:
-    # postgres+pg8000://<db_user>:<db_pass>@/<db_name>?unix_sock=/cloudsql/<cloud_sql_instance_name>/.s.PGSQL.5432
-    sqlalchemy.engine.url.URL(
-        drivername='postgres+pg8000',
-        username=db_user,
-        password=db_pass,
-        database=db_name,
-        query={
-            'unix_sock': '/cloudsql/{}/.s.PGSQL.5432'.format(
-                cloud_sql_connection_name)
-        }
+sqlalchemy.engine.url.URL(
+    drivername='postgresql+pg8000',
+    username=db_user,
+    password=db_pass,
+    database=db_name,
+    host = '23.236.61.116',
+    port = '5432'
     ),
-
-    # Pool size is the maximum number of permanent connections to keep.
     pool_size=5,
-    # Temporarily exceeds the set pool_size if no connections are available.
     max_overflow=2,
-    # The total number of concurrent connections for your application will be
-    # a total of pool_size and max_overflow.
-    # [END cloud_sql_postgres_sqlalchemy_limit]
-
-
-    # 'pool_timeout' is the maximum number of seconds to wait when retrieving a
-    # new connection from the pool. After the specified amount of time, an
-    # exception will be thrown.
-    pool_timeout=30,  # 30 seconds
-    # [END cloud_sql_postgres_sqlalchemy_timeout]
-
-    # 'pool_recycle' is the maximum number of seconds a connection can persist.
-    # Connections that live longer than the specified amount of time will be
-    # reestablished
-    pool_recycle=1800,  # 30 minutes
+    pool_timeout=30,
+    pool_recycle=1800,
 )
-
-
 
 
 # Secrets Init
@@ -124,16 +85,14 @@ def game_list():
 # Add user and games to DB then respond with user stats
 @app.route('/myStats', methods=['POST'])
 def my_stats():
-    db_add_user_and_games2(request.form.get("steamId"))
     steamId = api_get_steamId(request.form.get("steamId"))
     stats = "error"
     if steamId != "err":
-        #db_add_user_and_games(steamId)
-        db_add_user_and_games2(steamId)
-        #stats = get_name_and_avatar(steamId)
-        #stats = merge(stats, get_total_playtime(steamId))
-        #stats = merge(stats, get_total_and_unplayed_games(steamId))
-        #stats = merge(stats, get_top_played_games(steamId))
+        db_add_user_and_games(steamId)
+        stats = get_name_and_avatar(steamId)
+        stats = merge(stats, get_total_playtime(steamId))
+        stats = merge(stats, get_total_and_unplayed_games(steamId))
+        stats = merge(stats, get_top_played_games(steamId))
     return jsonify(stats)
 
 # Global Stats Leaderboard
@@ -155,9 +114,8 @@ def global_stats():
 # Most Popular Game among users
 @app.route('/popularGame', methods=['GET'])
 def popular_game():
-    res = ''
-    #res = get_total_users()
-    #res = merge(res, get_global_most_popular_game())
+    res = get_total_users()
+    res = merge(res, get_global_most_popular_game())
     return jsonify(res)
 
 
@@ -204,47 +162,26 @@ Insert/Update Google Spanner DB
 --------------------------------
 """
 def db_add_user_and_games(steamId):
+    print('IN ADD USER GAMES')
     summary = api_users_summary(steamId)
     summary = summary['response']
     summary['players'] = [dict(steamid=key['steamid'], personaname=key['personaname'], avatarmedium=key['avatarmedium']) for key in summary['players']]
 
-    sid = summary['players'][0]['steamid']
-    name = summary['players'][0]['personaname']
-    avatar_url = summary['players'][0]['avatarmedium']
-    data = [(sid, name, avatar_url)]
+    sid = prepareString(summary['players'][0]['steamid'])
+    name = prepareString(summary['players'][0]['personaname'])
+    avatar_url = prepareString(summary['players'][0]['avatarmedium'])
 
-    with sdatabase.batch() as batch:
-        batch.insert_or_update(
-            table='Users',
-            columns=('steamId', 'name', 'avatar_url',),
-            values=data)
+    with db.connect() as conn:
+        conn.execute(
+            "INSERT INTO Users(steamId, avatar_url, name) "
+            "VALUES('"+sid+"', '"+avatar_url+"', '"+name+"') "
+            "ON CONFLICT (steamId) DO UPDATE SET avatar_url = EXCLUDED.avatar_url, name = EXCLUDED.name; "
+        )
+            
     print('Inserted / Updated User ', steamId)
     db_add_games(sid)
     return
 
-def db_add_user_and_games2(steamId):
-    print('IN ADD USER')
-    summary = api_users_summary(steamId)
-    summary = summary['response']
-    summary['players'] = [dict(steamid=key['steamid'], personaname=key['personaname'], avatarmedium=key['avatarmedium']) for key in summary['players']]
-
-    sid = summary['players'][0]['steamid']
-    name = summary['players'][0]['personaname']
-    avatar_url = summary['players'][0]['avatarmedium']
-
-    try:
-        with db.connect() as conn:
-            conn.execute(
-                "INSERT INTO Users(steamId, avatar_url, name) "
-                "VALUES("+str(sid)+", "+str(avatar_url)+", "+str(name)+") "
-                "ON CONFLICT (steamId) DO UPDATE SET avatar_url = EXCLUDED.avatar_url, name = EXCLUDED.name; "
-            )
-            print('CONNECTION')
-    except Exception as e:
-        return 'Error: {}'.format(str(e))
-
-    print('Inserted / Updated User ', steamId)
-    return
 
 def db_add_games(steamId):
     summary = api_get_owned_games(steamId)
@@ -253,20 +190,20 @@ def db_add_games(steamId):
         summary['games'] = [dict(appid=key['appid'], name=key['name'], img_logo_url=key['img_logo_url'], playtime_forever=key['playtime_forever']) for key in summary['games']]
 
         length = len(summary['games'])
-        data = []
-        for i in range(length):
-            appId = summary['games'][i]['appid']
-            name = summary['games'][i]['name']
-            img_logo_url = "http://media.steampowered.com/steamcommunity/public/images/apps/" + str(appId) +"/"+ str(summary['games'][i]['img_logo_url']) + ".jpg"
-            playtime_forever = summary['games'][i]['playtime_forever']
-            data += [(appId, steamId, name, img_logo_url, playtime_forever)]
+        
+        with db.connect() as conn:
+            for i in range(length):
+                appId = prepareString(summary['games'][i]['appid'])
+                name = prepareString(summary['games'][i]['name'])
+                img_logo_url = "http://media.steampowered.com/steamcommunity/public/images/apps/" + appId +"/"+ str(summary['games'][i]['img_logo_url']) + ".jpg"
+                playtime_forever = prepareString(summary['games'][i]['playtime_forever'])
 
-        with sdatabase.batch() as batch:
-            batch.insert_or_update(
-                table='Games',
-                columns=('appId', 'steamId', 'name', 'img_logo_url', 'playtime',),
-                values=data)
-        print('Inserted / Updated Games for ', steamId)
+                conn.execute(
+                    "INSERT INTO Games(appId, steamId, name, img_logo_url, playtime) "
+                    "VALUES('"+appId+"', '"+steamId+"', '"+name+"', '"+img_logo_url+"', "+playtime_forever+") "
+                    "ON CONFLICT (appId, steamId) DO UPDATE SET playtime = EXCLUDED.playtime; "
+                )
+                print('Inserted / Updated Games for ', steamId)
     return
 
 
@@ -277,9 +214,10 @@ Query DB & Analytics
 --------------------------------
 """
 def get_total_users():
-    with sdatabase.snapshot() as snapshot:
-        query = "SELECT COUNT(steamId) FROM Users"
-        results = snapshot.execute_sql(query)
+    with db.connect() as conn:
+        results = conn.execute(
+            "SELECT COUNT(steamId) FROM Users; "
+        )
 
         total = 0
         for row in results:
@@ -290,10 +228,10 @@ def get_total_users():
 def get_name_and_avatar(steamId):
     name = ''
     avatar = ''
-
-    with sdatabase.snapshot() as snapshot:
-        query = "SELECT name, avatar_url FROM Users WHERE steamId =" + "'" + steamId + "'"
-        results = snapshot.execute_sql(query)
+    with db.connect() as conn:
+        results = conn.execute(
+            "SELECT name, avatar_url FROM Users WHERE steamId =" + "'" + steamId + "'; "
+        )
         for row in results:
             name = row[0]
             avatar = row[1]
@@ -304,8 +242,10 @@ def get_name_and_avatar(steamId):
 def get_total_playtime(steamId):
     playtime = 0
 
-    with sdatabase.snapshot() as snapshot:
-        query = "SELECT SUM(playtime) FROM Games WHERE steamId = " + "'" + steamId + "'"
+    with db.connect() as conn:
+        results = conn.execute(
+            "SELECT SUM(playtime) FROM Games WHERE steamId = " + "'" + steamId + "'; "
+        )
         results = snapshot.execute_sql(query)
         for row in results:
             playtime = row[0]/60
@@ -317,15 +257,17 @@ def get_total_and_unplayed_games(steamId):
     total = 0
     unplayed = 0
 
-    with sdatabase.snapshot() as snapshot:
-        query = "SELECT COUNT(appid) FROM Games WHERE steamId = " + "'" + steamId + "'"
-        results = snapshot.execute_sql(query)
+    with db.connect() as conn:
+        results = conn.execute(
+            "SELECT COUNT(appid) FROM Games WHERE steamId = " + "'" + steamId + "'; "
+        )
         for row in results:
             total = row[0]
 
-    with sdatabase.snapshot() as snapshot:
-        query = "SELECT COUNT(appid) FROM Games WHERE steamId = " + "'" + steamId + "' AND playtime < 10"
-        results = snapshot.execute_sql(query)
+    with db.connect() as conn:
+        results = conn.execute(
+            "SELECT COUNT(appid) FROM Games WHERE steamId = " + "'" + steamId + "' AND playtime < 10; "
+        )
         for row in results:
             unplayed = row[0]
 
@@ -334,9 +276,10 @@ def get_total_and_unplayed_games(steamId):
     return res
 
 def get_top_played_games(steamId):
-    with sdatabase.snapshot() as snapshot:
-        query = "SELECT name, playtime FROM Games WHERE steamId = " + "'" + steamId + "' ORDER BY playtime DESC LIMIT 10"
-        results = snapshot.execute_sql(query)
+    with db.connect() as conn:
+        results = conn.execute(
+            "SELECT name, playtime FROM Games WHERE steamId = " + "'" + steamId + "' ORDER BY playtime DESC LIMIT 10; "
+        )
         gameList = []
         for row in results:
             name = row[0]
@@ -349,22 +292,24 @@ def get_top_played_games(steamId):
 
 def get_total_playtime_rank(steamId):
     playtime = 0
-    with sdatabase.snapshot() as snapshot:
-        query = "SELECT SUM(playtime) FROM Games WHERE steamId = " + "'" + steamId + "'"
-        results = snapshot.execute_sql(query)
+    with db.connect() as conn:
+        results = conn.execute(
+            "SELECT SUM(playtime) FROM Games WHERE steamId = " + "'" + steamId + "'; "
+        )
         for row in results:
             playtime = int(row[0])
     
     rank = 0
-    with sdatabase.snapshot() as snapshot:
-        query = ("SELECT COUNT(sid) "
-                 "FROM( "
-                 "SELECT g.steamId AS sid, SUM(playtime) AS sum_play "
-                 "FROM Games g "
-                 "GROUP BY steamId "
-                 ") SUBQUERY "
-                 "WHERE sum_play > " + str(playtime) + " ")
-        results = snapshot.execute_sql(query)
+    with db.connect() as conn:
+        results = conn.execute(
+                    "SELECT COUNT(sid) "
+                    "FROM( "
+                    "SELECT g.steamId AS sid, SUM(playtime) AS sum_play "
+                    "FROM Games g "
+                    "GROUP BY steamId "
+                    ") SUBQUERY "
+                    "WHERE sum_play > " + str(playtime) + "; "
+                )
         for row in results:
             rank = int(row[0]) + 1       
 
@@ -374,22 +319,24 @@ def get_total_playtime_rank(steamId):
 
 def get_game_count_rank(steamId):
     count = 0
-    with sdatabase.snapshot() as snapshot:
-        query = "SELECT COUNT(appId) FROM Games WHERE steamId = " + "'" + steamId + "'"
-        results = snapshot.execute_sql(query)
+    with db.connect() as conn:
+        results = conn.execute(
+            "SELECT COUNT(appId) FROM Games WHERE steamId = " + "'" + steamId + "'; "
+        )
         for row in results:
             count = int(row[0])
     
     rank = 0
-    with sdatabase.snapshot() as snapshot:
-        query = ("SELECT COUNT(sid) "
-                 "FROM( "
-                 "SELECT g.steamId AS sid, COUNT(appId) AS count "
-                 "FROM Games g "
-                 "GROUP BY steamId "
-                 ") SUBQUERY "
-                 "WHERE count > " + str(count) + " ")
-        results = snapshot.execute_sql(query)
+    with db.connect() as conn:
+        results = conn.execute(
+            "SELECT COUNT(sid) "
+            "FROM( "
+            "SELECT g.steamId AS sid, COUNT(appId) AS count "
+            "FROM Games g "
+            "GROUP BY steamId "
+            ") SUBQUERY "
+            "WHERE count > " + str(count) + "; "
+        )
         for row in results:
             rank = int(row[0]) + 1       
 
@@ -399,45 +346,47 @@ def get_game_count_rank(steamId):
 
 def get_played_percent_rank(steamId):
     percent = 0
-    with sdatabase.snapshot() as snapshot:
-        query = ("SELECT (t1.played / t2.total)*100 AS percent "
-                 "FROM( "
-                 "SELECT g.steamId AS id1, COUNT(g.appId) AS played "
-                 "FROM Games g "
-                 "WHERE playtime >=10 "
-                 "GROUP BY id1 "
-                 ") t1 "
-                 "LEFT JOIN ( "
-                 "SELECT g.steamId AS id2, COUNT(g.appId) AS total "
-                 "FROM Games g "
-                 "GROUP BY id2 "
-                 ") t2 "
-                 "ON t2.id2 = t1.id1 "
-                 "WHERE id1 = '" + steamId + "' ")
-        results = snapshot.execute_sql(query)
+    with db.connect() as conn:
+        results = conn.execute(
+            "SELECT (t1.played / t2.total)*100 AS percent "
+            "FROM( "
+            "SELECT g.steamId AS id1, COUNT(g.appId) AS played "
+            "FROM Games g "
+            "WHERE playtime >=10 "
+            "GROUP BY id1 "
+            ") t1 "
+            "LEFT JOIN ( "
+            "SELECT g.steamId AS id2, COUNT(g.appId) AS total "
+            "FROM Games g "
+            "GROUP BY id2 "
+            ") t2 "
+            "ON t2.id2 = t1.id1 "
+            "WHERE id1 = '" + steamId + "'; "
+        )
         for row in results:
             percent = row[0]
     
     rank = 0
-    with sdatabase.snapshot() as snapshot:
-        query = ("SELECT COUNT(sid) "
-                 "FROM( "
-                 "SELECT id1 AS sid, (t1.played / t2.total)*100 AS percent  "
-                 "FROM( "
-                 "SELECT g.steamId AS id1, COUNT(g.appId) AS played "
-                 "FROM Games g "
-                 "WHERE playtime >=10 "
-                 "GROUP BY id1 "
-                 ") t1 "
-                 "LEFT JOIN ( "
-                 "SELECT g.steamId AS id2, COUNT(g.appId) AS total "
-                 "FROM Games g "
-                 "GROUP BY id2 "
-                 ") t2 "
-                 "ON t2.id2 = t1.id1 "
-                 ") SUBQUERY "
-                 "WHERE percent > " + str(percent) + " ")
-        results = snapshot.execute_sql(query)
+    with db.connect() as conn:
+        results = conn.execute(
+            "SELECT COUNT(sid) "
+            "FROM( "
+            "SELECT id1 AS sid, (t1.played / t2.total)*100 AS percent  "
+            "FROM( "
+            "SELECT g.steamId AS id1, COUNT(g.appId) AS played "
+            "FROM Games g "
+            "WHERE playtime >=10 "
+            "GROUP BY id1 "
+            ") t1 "
+            "LEFT JOIN ( "
+            "SELECT g.steamId AS id2, COUNT(g.appId) AS total "
+            "FROM Games g "
+            "GROUP BY id2 "
+            ") t2 "
+            "ON t2.id2 = t1.id1 "
+            ") SUBQUERY "
+            "WHERE percent > " + str(percent) + "; "
+        )
         for row in results:
             rank = int(row[0]) + 1       
 
@@ -446,12 +395,13 @@ def get_played_percent_rank(steamId):
     return res
 
 def get_global_most_popular_game():
-    with sdatabase.snapshot() as snapshot:
-        query = ("SELECT name, img_logo_url, SUM(playtime) AS p, COUNT(*) AS c "
-                 "FROM Games "
-                 "GROUP BY name, img_logo_url "
-                 "ORDER BY c DESC, p DESC LIMIT 1 ")
-        results = snapshot.execute_sql(query)
+    with db.connect() as conn:
+        results = conn.execute(
+            "SELECT name, img_logo_url, SUM(playtime) AS p, COUNT(*) AS c "
+            "FROM Games "
+            "GROUP BY name, img_logo_url "
+            "ORDER BY c DESC, p DESC LIMIT 1 "
+        )
         resList = []
         for row in results:
             name = row[0]
@@ -464,21 +414,22 @@ def get_global_most_popular_game():
     return res
 
 def get_global_top_playtime():
-    with sdatabase.snapshot() as snapshot:
-        query = ("SELECT t2.sname, t2.avatar, t1.playsum "
-                 "FROM ( "
-                 "SELECT g.steamId AS id1, SUM(g.playtime) AS playsum "
-                 "FROM Games g "
-                 "GROUP BY id1 "
-                 " ) t1 "
-                 "LEFT JOIN ( "
-                 "SELECT u.steamId AS id2, u.name AS sname, u.avatar_url AS avatar "
-                 "FROM Users u "
-                 "GROUP BY id2, avatar, sname "
-                 " ) t2 "
-                 "ON t2.id2 = t1.id1 "
-                 "ORDER BY t1.playsum DESC LIMIT 10 ")
-        results = snapshot.execute_sql(query)
+    with db.connect() as conn:
+        results = conn.execute(
+            "SELECT t2.sname, t2.avatar, t1.playsum "
+            "FROM ( "
+            "SELECT g.steamId AS id1, SUM(g.playtime) AS playsum "
+            "FROM Games g "
+            "GROUP BY id1 "
+            " ) t1 "
+            "LEFT JOIN ( "
+            "SELECT u.steamId AS id2, u.name AS sname, u.avatar_url AS avatar "
+            "FROM Users u "
+            "GROUP BY id2, avatar, sname "
+            " ) t2 "
+            "ON t2.id2 = t1.id1 "
+            "ORDER BY t1.playsum DESC LIMIT 10 "
+        )
         resList = []
         for row in results:
             sid = row[0]
@@ -490,21 +441,22 @@ def get_global_top_playtime():
     return res
 
 def get_global_top_game_count():
-    with sdatabase.snapshot() as snapshot:
-        query = ("SELECT t2.sname, t2.avatar, t1.gamecount "
-                 "FROM ( "
-                 "SELECT g.steamId AS id1, COUNT(g.appId) AS gamecount "
-                 "FROM Games g "
-                 "GROUP BY id1 "
-                 " ) t1 "
-                 "LEFT JOIN ( "
-                 "SELECT u.steamId AS id2, u.name AS sname, u.avatar_url AS avatar "
-                 "FROM Users u "
-                 "GROUP BY id2, avatar, sname "
-                 " ) t2 "
-                 "ON t2.id2 = t1.id1 "
-                 "ORDER BY t1.gamecount DESC LIMIT 10 ")
-        results = snapshot.execute_sql(query)
+    with db.connect() as conn:
+        results = conn.execute(
+            "SELECT t2.sname, t2.avatar, t1.gamecount "
+            "FROM ( "
+            "SELECT g.steamId AS id1, COUNT(g.appId) AS gamecount "
+            "FROM Games g "
+            "GROUP BY id1 "
+            " ) t1 "
+            "LEFT JOIN ( "
+            "SELECT u.steamId AS id2, u.name AS sname, u.avatar_url AS avatar "
+            "FROM Users u "
+            "GROUP BY id2, avatar, sname "
+            " ) t2 "
+            "ON t2.id2 = t1.id1 "
+            "ORDER BY t1.gamecount DESC LIMIT 10 "
+        )
         resList = []
         for row in results:
             sid = row[0]
@@ -516,29 +468,29 @@ def get_global_top_game_count():
     return res
 
 def get_global_top_played_percent():
-    with sdatabase.snapshot() as snapshot:
-        query = ("SELECT t3.sname, t3.avatar, (t1.played / t2.total)*100 AS percent "
-                 "FROM ( "
-                 "SELECT g.steamId AS id1, COUNT(g.appId) AS played "
-                 "FROM Games g "
-                 "WHERE playtime >=10 "
-                 "GROUP BY id1 "
-                 " ) t1 "
-                 "LEFT JOIN ( "
-                 "SELECT g.steamId AS id2, COUNT(g.appId) AS total "
-                 "FROM Games g "
-                 "GROUP BY id2 "
-                 " ) t2 "
-                 "ON t2.id2 = t1.id1 "
-                 "LEFT JOIN ( "
-                 "SELECT u.steamId AS id3, u.name AS sname, u.avatar_url AS avatar "
-                 "FROM Users u "
-                 "GROUP BY id3, avatar, sname "
-                 " ) t3 "
-                 "ON t3.id3 = t2.id2 "
-                 "ORDER BY percent DESC LIMIT 10")
-
-        results = snapshot.execute_sql(query)
+    with db.connect() as conn:
+        results = conn.execute(
+            "SELECT t3.sname, t3.avatar, (t1.played / t2.total)*100 AS percent "
+            "FROM ( "
+            "SELECT g.steamId AS id1, COUNT(g.appId) AS played "
+            "FROM Games g "
+            "WHERE playtime >=10 "
+            "GROUP BY id1 "
+            " ) t1 "
+            "LEFT JOIN ( "
+            "SELECT g.steamId AS id2, COUNT(g.appId) AS total "
+            "FROM Games g "
+            "GROUP BY id2 "
+            " ) t2 "
+            "ON t2.id2 = t1.id1 "
+            "LEFT JOIN ( "
+            "SELECT u.steamId AS id3, u.name AS sname, u.avatar_url AS avatar "
+            "FROM Users u "
+            "GROUP BY id3, avatar, sname "
+            " ) t3 "
+            "ON t3.id3 = t2.id2 "
+            "ORDER BY percent DESC LIMIT 10"
+        )
         resList = []
         for row in results:
             sid = row[0]
@@ -554,6 +506,11 @@ def get_global_top_played_percent():
 def merge(dict1, dict2):
     res = dict(dict1, **dict2)
     return res
+
+def prepareString(s):
+    s = str(s)
+    s = s.replace("'", "''")
+    return s
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')

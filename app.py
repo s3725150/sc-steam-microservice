@@ -243,7 +243,6 @@ def get_total_playtime(steamId):
         results = conn.execute(
             "SELECT SUM(playtime) FROM Games WHERE steamId = " + "'" + steamId + "'; "
         )
-        results = snapshot.execute_sql(query)
         for row in results:
             playtime = row[0]/60
 

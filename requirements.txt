@@ -3,5 +3,5 @@ Flask-Cors==3.0.7
 requests
 google-cloud-spanner
 google-cloud-secret-manager
-pg8000
+psycopg2-binary
 SQLAlchemy

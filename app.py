@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from google.cloud import spanner, secretmanager
-import requests, pg8000, sqlalchemy, os
+import requests, psycopg2, sqlalchemy, os
 
 """
 --------------------------------
@@ -23,21 +23,15 @@ CORS(app, resources={r'/*': {'origins': '*'}})
 db_user = os.environ.get("DB_USER")
 db_pass = os.environ.get("DB_PASS")
 db_name = os.environ.get("DB_NAME")
-db_user = 'postgres'
-db_pass = 'root'
-db_name = 'steam_data'
-driver_name = 'postgres+pg8000'
 cloud_sql_connection_name = 'cc-steam-chat:us-central1:steam-chat'
-query_string =  '"unix_sock": "/cloudsql/{}/.s.PGSQL.5432".format(cloud_sql_connection_name)'
-
 
 # The SQLAlchemy engine will help manage interactions, including automatically
 # managing a pool of connections to your database
 db = sqlalchemy.create_engine(
     # Equivalent URL:
-    # postgres+pg8000://<db_user>:<db_pass>@/<db_name>?unix_sock=/cloudsql/<cloud_sql_instance_name>/.s.PGSQL.5432
+    # postgres+psycopg2://<db_user>:<db_pass>@/<db_name>?unix_sock=/cloudsql/<cloud_sql_instance_name>/.s.PGSQL.5432
     sqlalchemy.engine.url.URL(
-        drivername='postgres+pg8000',
+        drivername='postgres+psycopg2',
         username=db_user,
         password=db_pass,
         database=db_name,

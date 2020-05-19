@@ -37,28 +37,11 @@ sdatabase_id = 'steam_data'
 sdatabase = instance.database(sdatabase_id)
 
 # postgres init
-#Set the following variables depending on your specific
-#connection name and root password from the earlier steps:
-connection_name = "steam-chat"
 db_password = os.environ.get("DB_PASS")
 db_name = os.environ.get("DB_NAME")
 db_user = os.environ.get("DB_USER")
-driver_name = 'postgres+pg8000'
-query_string =  '"unix_sock": "/cloudsql/{}/.s.PGSQL.5432".format(connection_name)'
+db = sqlalchemy.create_engine('postgresql+psycopg2://' + db_user + ':' + db_password + '@/?host=/cloudsql/cc-steam-chat:us-central1:steam-chat')
 
-db = sqlalchemy.create_engine(
-    sqlalchemy.engine.url.URL(
-        drivername=driver_name,
-        username=db_user,
-        password=db_password,
-        database=db_name,
-        query={query_string},
-    ),
-    pool_size=5,
-    max_overflow=2,
-    pool_timeout=30,
-    pool_recycle=1800
-  )
 
 
 # Secrets Init

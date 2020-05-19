@@ -22,24 +22,27 @@ CORS(app, resources={r'/*': {'origins': '*'}})
 
 # Spanner Init
 # Instantiate a client.
-spanner_client = spanner.Client()
-
+#spanner_client = spanner.Client()
+sdatabase = ''
 # Your Cloud Spanner instance ID.
-instance_id = 'steam-chat'
+#instance_id = 'steam-chat'
 
 # Get a Cloud Spanner instance by ID.
-instance = spanner_client.instance(instance_id)
+#instance = spanner_client.instance(instance_id)
 
 # Your Cloud Spanner database ID.
-sdatabase_id = 'steam_data'
+#sdatabase_id = 'steam_data'
 
 # Get a Cloud Spanner database by ID.
-sdatabase = instance.database(sdatabase_id)
+#sdatabase = instance.database(sdatabase_id)
 
 # postgres init
 db_pass = os.environ.get("DB_PASS")
+print(db_pass)
 db_name = os.environ.get("DB_NAME")
+print(db_name)
 db_user = os.environ.get("DB_USER")
+print(db_user)
 cloud_sql_connection_name = 'cc-steam-chat:us-central1:steam-chat'
 
 
@@ -124,12 +127,12 @@ def my_stats():
     steamId = api_get_steamId(request.form.get("steamId"))
     stats = "error"
     if steamId != "err":
-        db_add_user_and_games(steamId)
+        #db_add_user_and_games(steamId)
         db_add_user_and_games2(steamId)
-        stats = get_name_and_avatar(steamId)
-        stats = merge(stats, get_total_playtime(steamId))
-        stats = merge(stats, get_total_and_unplayed_games(steamId))
-        stats = merge(stats, get_top_played_games(steamId))
+        #stats = get_name_and_avatar(steamId)
+        #stats = merge(stats, get_total_playtime(steamId))
+        #stats = merge(stats, get_total_and_unplayed_games(steamId))
+        #stats = merge(stats, get_top_played_games(steamId))
     return jsonify(stats)
 
 # Global Stats Leaderboard
@@ -151,8 +154,9 @@ def global_stats():
 # Most Popular Game among users
 @app.route('/popularGame', methods=['GET'])
 def popular_game():
-    res = get_total_users()
-    res = merge(res, get_global_most_popular_game())
+    res = ''
+    #res = get_total_users()
+    #res = merge(res, get_global_most_popular_game())
     return jsonify(res)
 
 
@@ -226,12 +230,13 @@ def db_add_user_and_games2(steamId):
     name = summary['players'][0]['personaname']
     avatar_url = summary['players'][0]['avatarmedium']
 
-    stmt = sqlalchemy.text("INSERT INTO Users(steamId, avatar_url, name) "
-                           "VALUES("+str(sid)+", "+str(avatar_url)+", "+str(name)+") "
-                           "ON CONFLICT (steamId) DO UPDATE SET avatar_url = EXCLUDED.avatar_url, name = EXCLUDED.name; ")
     try:
         with db.connect() as conn:
-            conn.execute(stmt)
+            conn.execute(
+                "INSERT INTO Users(steamId, avatar_url, name) "
+                "VALUES("+str(sid)+", "+str(avatar_url)+", "+str(name)+") "
+                "ON CONFLICT (steamId) DO UPDATE SET avatar_url = EXCLUDED.avatar_url, name = EXCLUDED.name; "
+            )
             print('CONNECTION')
     except Exception as e:
         return 'Error: {}'.format(str(e))

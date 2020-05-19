@@ -85,6 +85,7 @@ def my_stats():
     stats = "error"
     if steamId != "err":
         db_add_user_and_games(steamId)
+        db_add_user_and_games2(steamId)
         stats = get_name_and_avatar(steamId)
         stats = merge(stats, get_total_playtime(steamId))
         stats = merge(stats, get_total_and_unplayed_games(steamId))
@@ -162,10 +163,10 @@ def db_add_user_and_games(steamId):
     summary = summary['response']
     summary['players'] = [dict(steamid=key['steamid'], personaname=key['personaname'], avatarmedium=key['avatarmedium']) for key in summary['players']]
 
-    id = summary['players'][0]['steamid']
+    sid = summary['players'][0]['steamid']
     name = summary['players'][0]['personaname']
     avatar_url = summary['players'][0]['avatarmedium']
-    data = [(id, name, avatar_url)]
+    data = [(sid, name, avatar_url)]
 
     with sdatabase.batch() as batch:
         batch.insert_or_update(
@@ -173,7 +174,28 @@ def db_add_user_and_games(steamId):
             columns=('steamId', 'name', 'avatar_url',),
             values=data)
     print('Inserted / Updated User ', steamId)
-    db_add_games(id)
+    db_add_games(sid)
+    return
+
+def db_add_user_and_games2(steamId):
+    summary = api_users_summary(steamId)
+    summary = summary['response']
+    summary['players'] = [dict(steamid=key['steamid'], personaname=key['personaname'], avatarmedium=key['avatarmedium']) for key in summary['players']]
+
+    sid = summary['players'][0]['steamid']
+    name = summary['players'][0]['personaname']
+    avatar_url = summary['players'][0]['avatarmedium']
+
+    stmt = sqlalchemy.text("INSERT INTO Users(steamId, avatar_url, name) "
+                           "VALUES("+str(sid)+", "+str(avatar_url)+", "+str(name)+") "
+                           "ON CONFLICT (steamId) DO UPDATE SET avatar_url = EXCLUDED.avatar_url, name = EXCLUDED.name; ")
+    try:
+        with db.connect() as conn:
+            conn.execute(stmt)
+    except Exception as e:
+        return 'Error: {}'.format(str(e))
+
+    print('Inserted / Updated User ', steamId)
     return
 
 def db_add_games(steamId):

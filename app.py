@@ -44,7 +44,7 @@ project_id = 'cc-steam-chat'
 client = secretmanager.SecretManagerServiceClient()
 
 # Build the resource name of the secret version.
-name = client.secret_version_path(project_id, 'steam_api_key', 1)
+name = client.secret_version_path(project_id, 'steam_api_key', 2)
 
 # Access the secret version.
 response = client.access_secret_version(name)

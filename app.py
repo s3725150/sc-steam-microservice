@@ -35,9 +35,8 @@ db = sqlalchemy.create_engine(
         username=db_user,
         password=db_pass,
         database=db_name,
-        query={
-            'unix_sock': '/cloudsql/{}/.s.PGSQL.5432'.format(cloud_sql_connection_name)
-        }
+        host='10.32.32.3'
+        port='5432'
     ),
     pool_size=5,
     max_overflow=2,

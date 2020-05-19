@@ -35,7 +35,7 @@ db = sqlalchemy.create_engine(
         username=db_user,
         password=db_pass,
         database=db_name,
-        host='10.32.32.3'
+        host='10.32.32.3',
         port='5432'
     ),
     pool_size=5,

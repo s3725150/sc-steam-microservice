@@ -24,24 +24,26 @@ CORS(app, resources={r'/*': {'origins': '*'}})
 db_user = os.environ.get("DB_USER")
 db_pass = os.environ.get("DB_PASS")
 db_name = os.environ.get("DB_NAME")
+driver_name = 'postgres+pg8000'
 cloud_sql_connection_name = 'cc-steam-chat:us-central1:steam-chat'
+query_string =  '"unix_sock": "/cloudsql/{}/.s.PGSQL.5432".format(cloud_sql_connection_name)'
 
 
 # The SQLAlchemy engine will help manage interactions, including automatically
 # managing a pool of connections to your database
 db = sqlalchemy.create_engine(
-sqlalchemy.engine.url.URL(
-    drivername='postgresql+pg8000',
-    username=db_user,
-    password=db_pass,
-    database=db_name,
-    query={"unix_socket": "/cloudsql/{}".format(cloud_sql_connection_name)},
+    sqlalchemy.engine.url.URL(
+        drivername=driver_name,
+        username=db_user,
+        password=db_pass,
+        database=db_name,
+        query={query_string},
     ),
     pool_size=5,
     max_overflow=2,
     pool_timeout=30,
-    pool_recycle=1800,
-)
+    pool_recycle=1800
+  )
 
 
 # Secrets Init

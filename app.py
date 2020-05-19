@@ -43,8 +43,14 @@ project_id = 'cc-steam-chat'
 # Create the Secret Manager client.
 client = secretmanager.SecretManagerServiceClient()
 
-# Get the Steam Web API key
-apiKey = "?key=" + secrets.access_secret_version("projects/"+project_id+"/secrets/steam_api_key/versions/1").payload.data.decode("utf-8")
+# Build the resource name of the secret version.
+name = client.secret_version_path(project_id, 'steam_api_key', 1)
+
+# Access the secret version.
+response = client.access_secret_version(name)
+
+# Steam Web API key
+apiKey = "?key=" +  response.payload.data.decode('UTF-8')
 
 
 

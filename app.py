@@ -26,9 +26,6 @@ db_pass = os.environ.get("DB_PASS")
 db_name = os.environ.get("DB_NAME")
 cloud_sql_connection_name = 'cc-steam-chat:us-central1:steam-chat'
 
-db_user = 'postgres'
-db_pass = 'root'
-db_name = 'steam_data'
 
 # The SQLAlchemy engine will help manage interactions, including automatically
 # managing a pool of connections to your database
@@ -38,8 +35,7 @@ sqlalchemy.engine.url.URL(
     username=db_user,
     password=db_pass,
     database=db_name,
-    host = '23.236.61.116',
-    port = '5432'
+    query={"unix_socket": "/cloudsql/{}".format(cloud_sql_connection_name)},
     ),
     pool_size=5,
     max_overflow=2,

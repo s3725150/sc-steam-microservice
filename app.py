@@ -31,10 +31,10 @@ instance_id = 'steam-chat'
 instance = spanner_client.instance(instance_id)
 
 # Your Cloud Spanner database ID.
-database_id = 'steam_data'
+sdatabase_id = 'steam_data'
 
 # Get a Cloud Spanner database by ID.
-database = instance.database(database_id)
+sdatabase = instance.database(sdatabase_id)
 
 # postgres init
 #Set the following variables depending on your specific
@@ -184,7 +184,7 @@ def db_add_user_and_games(steamId):
     avatar_url = summary['players'][0]['avatarmedium']
     data = [(id, name, avatar_url)]
 
-    with database.batch() as batch:
+    with sdatabase.batch() as batch:
         batch.insert_or_update(
             table='Users',
             columns=('steamId', 'name', 'avatar_url',),
@@ -208,7 +208,7 @@ def db_add_games(steamId):
             playtime_forever = summary['games'][i]['playtime_forever']
             data += [(appId, steamId, name, img_logo_url, playtime_forever)]
 
-        with database.batch() as batch:
+        with sdatabase.batch() as batch:
             batch.insert_or_update(
                 table='Games',
                 columns=('appId', 'steamId', 'name', 'img_logo_url', 'playtime',),
@@ -224,7 +224,7 @@ Query DB & Analytics
 --------------------------------
 """
 def get_total_users():
-    with database.snapshot() as snapshot:
+    with sdatabase.snapshot() as snapshot:
         query = "SELECT COUNT(steamId) FROM Users"
         results = snapshot.execute_sql(query)
 
@@ -238,7 +238,7 @@ def get_name_and_avatar(steamId):
     name = ''
     avatar = ''
 
-    with database.snapshot() as snapshot:
+    with sdatabase.snapshot() as snapshot:
         query = "SELECT name, avatar_url FROM Users WHERE steamId =" + "'" + steamId + "'"
         results = snapshot.execute_sql(query)
         for row in results:
@@ -251,7 +251,7 @@ def get_name_and_avatar(steamId):
 def get_total_playtime(steamId):
     playtime = 0
 
-    with database.snapshot() as snapshot:
+    with sdatabase.snapshot() as snapshot:
         query = "SELECT SUM(playtime) FROM Games WHERE steamId = " + "'" + steamId + "'"
         results = snapshot.execute_sql(query)
         for row in results:
@@ -264,13 +264,13 @@ def get_total_and_unplayed_games(steamId):
     total = 0
     unplayed = 0
 
-    with database.snapshot() as snapshot:
+    with sdatabase.snapshot() as snapshot:
         query = "SELECT COUNT(appid) FROM Games WHERE steamId = " + "'" + steamId + "'"
         results = snapshot.execute_sql(query)
         for row in results:
             total = row[0]
 
-    with database.snapshot() as snapshot:
+    with sdatabase.snapshot() as snapshot:
         query = "SELECT COUNT(appid) FROM Games WHERE steamId = " + "'" + steamId + "' AND playtime < 10"
         results = snapshot.execute_sql(query)
         for row in results:
@@ -281,7 +281,7 @@ def get_total_and_unplayed_games(steamId):
     return res
 
 def get_top_played_games(steamId):
-    with database.snapshot() as snapshot:
+    with sdatabase.snapshot() as snapshot:
         query = "SELECT name, playtime FROM Games WHERE steamId = " + "'" + steamId + "' ORDER BY playtime DESC LIMIT 10"
         results = snapshot.execute_sql(query)
         gameList = []
@@ -296,14 +296,14 @@ def get_top_played_games(steamId):
 
 def get_total_playtime_rank(steamId):
     playtime = 0
-    with database.snapshot() as snapshot:
+    with sdatabase.snapshot() as snapshot:
         query = "SELECT SUM(playtime) FROM Games WHERE steamId = " + "'" + steamId + "'"
         results = snapshot.execute_sql(query)
         for row in results:
             playtime = int(row[0])
     
     rank = 0
-    with database.snapshot() as snapshot:
+    with sdatabase.snapshot() as snapshot:
         query = ("SELECT COUNT(sid) "
                  "FROM( "
                  "SELECT g.steamId AS sid, SUM(playtime) AS sum_play "
@@ -321,14 +321,14 @@ def get_total_playtime_rank(steamId):
 
 def get_game_count_rank(steamId):
     count = 0
-    with database.snapshot() as snapshot:
+    with sdatabase.snapshot() as snapshot:
         query = "SELECT COUNT(appId) FROM Games WHERE steamId = " + "'" + steamId + "'"
         results = snapshot.execute_sql(query)
         for row in results:
             count = int(row[0])
     
     rank = 0
-    with database.snapshot() as snapshot:
+    with sdatabase.snapshot() as snapshot:
         query = ("SELECT COUNT(sid) "
                  "FROM( "
                  "SELECT g.steamId AS sid, COUNT(appId) AS count "
@@ -346,7 +346,7 @@ def get_game_count_rank(steamId):
 
 def get_played_percent_rank(steamId):
     percent = 0
-    with database.snapshot() as snapshot:
+    with sdatabase.snapshot() as snapshot:
         query = ("SELECT (t1.played / t2.total)*100 AS percent "
                  "FROM( "
                  "SELECT g.steamId AS id1, COUNT(g.appId) AS played "
@@ -366,7 +366,7 @@ def get_played_percent_rank(steamId):
             percent = row[0]
     
     rank = 0
-    with database.snapshot() as snapshot:
+    with sdatabase.snapshot() as snapshot:
         query = ("SELECT COUNT(sid) "
                  "FROM( "
                  "SELECT id1 AS sid, (t1.played / t2.total)*100 AS percent  "
@@ -393,7 +393,7 @@ def get_played_percent_rank(steamId):
     return res
 
 def get_global_most_popular_game():
-    with database.snapshot() as snapshot:
+    with sdatabase.snapshot() as snapshot:
         query = ("SELECT name, img_logo_url, SUM(playtime) AS p, COUNT(*) AS c "
                  "FROM Games "
                  "GROUP BY name, img_logo_url "
@@ -411,7 +411,7 @@ def get_global_most_popular_game():
     return res
 
 def get_global_top_playtime():
-    with database.snapshot() as snapshot:
+    with sdatabase.snapshot() as snapshot:
         query = ("SELECT t2.sname, t2.avatar, t1.playsum "
                  "FROM ( "
                  "SELECT g.steamId AS id1, SUM(g.playtime) AS playsum "
@@ -437,7 +437,7 @@ def get_global_top_playtime():
     return res
 
 def get_global_top_game_count():
-    with database.snapshot() as snapshot:
+    with sdatabase.snapshot() as snapshot:
         query = ("SELECT t2.sname, t2.avatar, t1.gamecount "
                  "FROM ( "
                  "SELECT g.steamId AS id1, COUNT(g.appId) AS gamecount "
@@ -463,7 +463,7 @@ def get_global_top_game_count():
     return res
 
 def get_global_top_played_percent():
-    with database.snapshot() as snapshot:
+    with sdatabase.snapshot() as snapshot:
         query = ("SELECT t3.sname, t3.avatar, (t1.played / t2.total)*100 AS percent "
                  "FROM ( "
                  "SELECT g.steamId AS id1, COUNT(g.appId) AS played "

@@ -1,7 +1,8 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from google.cloud import spanner, secretmanager
-import requests
+import requests, sqlalchemy, os
+
 
 """
 --------------------------------
@@ -34,6 +35,30 @@ database_id = 'steam_data'
 
 # Get a Cloud Spanner database by ID.
 database = instance.database(database_id)
+
+# postgres init
+#Set the following variables depending on your specific
+#connection name and root password from the earlier steps:
+connection_name = "steam-chat"
+db_password = os.environ.get("DB_PASS")
+db_name = os.environ.get("DB_NAME")
+db_user = os.environ.get("DB_USER")
+driver_name = 'postgres+pg8000'
+query_string =  '"unix_sock": "/cloudsql/{}/.s.PGSQL.5432".format(connection_name)'
+
+db = sqlalchemy.create_engine(
+    sqlalchemy.engine.url.URL(
+        drivername=driver_name,
+        username=db_user,
+        password=db_password,
+        database=db_name,
+        query={query_string},
+    ),
+    pool_size=5,
+    max_overflow=2,
+    pool_timeout=30,
+    pool_recycle=1800
+  )
 
 
 # Secrets Init

@@ -68,12 +68,10 @@ GET/POST Routes
 # Health Check
 @app.route('/')
 def health_check():
-    status_code = flask.Response(status=200)
-    return status_code
+    return jsonify('success')
 @app.route('/steam/')
 def steam_health_check():
-    status_code = flask.Response(status=200)
-    return status_code
+    return jsonify('success')
 
 # Respond with the list {appid, logo, name} games user owns
 @app.route('/steam/game_list', methods=['POST'])

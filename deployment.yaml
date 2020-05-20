@@ -1,3 +1,12 @@
+apiVersion: networking.gke.io/v1beta1
+kind: ManagedCertificate
+metadata:
+  name: steamchat-certificate
+spec:
+  domains:
+    - steamchat-ms.xyz
+
+---
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:

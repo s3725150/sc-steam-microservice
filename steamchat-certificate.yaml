@@ -4,4 +4,4 @@ metadata:
   name: steamchat-certificate
 spec:
   domains:
-    - waterdeep.xyz
+    - steamchat-ms.xyz

@@ -67,6 +67,11 @@ GET/POST Routes
 """
 # Health Check
 @app.route('/', methods=['GET'])
+def root_health_check():
+    return jsonify(success=True)
+
+# Health Check
+@app.route('/steam/', methods=['GET'])
 def health_check():
     return jsonify(success=True)
 

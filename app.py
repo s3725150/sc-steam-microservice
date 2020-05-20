@@ -22,9 +22,6 @@ CORS(app, resources={r'/*': {'origins': '*'}})
 db_user = os.environ.get("DB_USER")
 db_pass = os.environ.get("DB_PASS")
 db_name = os.environ.get("DB_NAME")
-db_user = 'postgres'
-db_pass = 'root'
-db_name = 'steam_data'
 
 # The SQLAlchemy engine will help manage interactions, including automatically
 # managing a pool of connections to your database
@@ -69,7 +66,7 @@ GET/POST Routes
 --------------------------------
 """
 # Respond with the list {appid, logo, name} games user owns
-@app.route('/gameList', methods=['POST'])
+@app.route('/steam/game_list', methods=['POST'])
 def game_list():
     steamId = api_get_steamId(request.form.get("steamId"))
     res = "error"
@@ -80,7 +77,7 @@ def game_list():
     return jsonify(res)
 
 # Add user and games to DB then respond with user stats
-@app.route('/myStats', methods=['POST'])
+@app.route('/steam/my_stats', methods=['POST'])
 def my_stats():
     steamId = api_get_steamId(request.form.get("steamId"))
     stats = "error"
@@ -93,7 +90,7 @@ def my_stats():
     return jsonify(stats)
 
 # Global Stats Leaderboard
-@app.route('/globalStats', methods=['POST'])
+@app.route('/steam/global_stats', methods=['POST'])
 def global_stats():
     steamId = api_get_steamId(request.form.get("steamId"))
     res = "error"
@@ -109,7 +106,7 @@ def global_stats():
     return jsonify(res)
 
 # Most Popular Game among users
-@app.route('/popularGame', methods=['GET'])
+@app.route('/steam/popular_game', methods=['GET'])
 def popular_game():
     res = get_total_users()
     res = merge(res, get_global_most_popular_game())

@@ -1,17 +1,36 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: steamchat-ms
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: steamchat-microservices
+    networking.gke.io/managed-certificates: steamchat-certificate
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /steam/*
+        backend:
+          serviceName: serv-steam-ms
+          servicePort: 80
+      - path: /chat/*
+        backend:
+          serviceName: serv-chat-ms
+          servicePort: 80
+
+---
 apiVersion: v1
 kind: Service
 metadata:
-  name: steam-ms-service
+  name: serv-steam-ms
 spec:
   selector:
     app: steam-ms
+  type: NodePort
   ports:
-  - protocol: "TCP"
-    port: 80
-    targetPort: 5000
-  type: LoadBalancer
-  clusterIP: 10.121.10.165
-  loadBalancerIP: 35.239.38.150
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
 
 ---
 apiVersion: apps/v1

@@ -23,6 +23,10 @@ db_user = os.environ.get("DB_USER")
 db_pass = os.environ.get("DB_PASS")
 db_name = os.environ.get("DB_NAME")
 db_ip = os.environ.get("DB_IP")
+print(db_user)
+print(db_pass)
+print(db_name)
+print(db_ip)
 
 # The SQLAlchemy engine will help manage interactions, including automatically
 # managing a pool of connections to your database

@@ -37,31 +37,20 @@ spec:
         - name: DB_USER
           valueFrom:
             secretKeyRef:
-              name: postgres-secret
+              name: sql-creds
               key: db_user
         - name: DB_PASS
           valueFrom:
             secretKeyRef:
-              name: postgres-secret
+              name: sql-creds
               key: db_password
         - name: DB_NAME
           valueFrom:
             secretKeyRef:
-              name: postgres-secret
+              name: sql-creds
               key: db_name
-      - name: cloud-sql-proxy
-        image: gcr.io/cloudsql-docker/gce-proxy:1.17
-        command:
-          - "/cloud_sql_proxy"
-          - "-instances=cc-steam-chat:us-central1:steam-chat=tcp:5432"
-          - "-credential_file=/secrets/service_account.json"
-        securityContext:
-          allowPrivilegeEscalation: false
-        volumeMounts:
-        - name: sql-volume
-          mountPath: /secrets/
-          readOnly: true
-      volumes:
-      - name: sql-volume
-        secret:
-          secretName: sql-secret
+        - name: DB_IP
+          valueFrom:
+            secretKeyRef:
+              name: sql-creds
+              key: db_ip

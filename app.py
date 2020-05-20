@@ -18,12 +18,11 @@ app.config.from_object(__name__)
 # enable CORS
 CORS(app, resources={r'/*': {'origins': '*'}})
 
-
 # postgres init
 db_user = os.environ.get("DB_USER")
 db_pass = os.environ.get("DB_PASS")
 db_name = os.environ.get("DB_NAME")
-cloud_sql_connection_name = 'cc-steam-chat:us-central1:steam-chat'
+db_ip = os.environ.get("DB_IP")
 
 # The SQLAlchemy engine will help manage interactions, including automatically
 # managing a pool of connections to your database
@@ -35,15 +34,14 @@ db = sqlalchemy.create_engine(
         username=db_user,
         password=db_pass,
         database=db_name,
-        host='10.32.32.3',
+        host=db_ip,
         port='5432'
     ),
     pool_size=5,
     max_overflow=2,
-    #pool_timeout=30,
+    pool_timeout=30,
     pool_recycle=1800
   )
-
 
 # Secrets Init
 # GCP project in which to store secrets in Secret Manager.
@@ -396,7 +394,7 @@ def get_global_most_popular_game():
             "SELECT name, img_logo_url, SUM(playtime) AS p, COUNT(*) AS c "
             "FROM Games "
             "GROUP BY name, img_logo_url "
-            "ORDER BY c DESC, p DESC LIMIT 1 "
+            "ORDER BY c DESC, p DESC LIMIT 1; "
         )
         resList = []
         for row in results:
@@ -424,7 +422,7 @@ def get_global_top_playtime():
             "GROUP BY id2, avatar, sname "
             " ) t2 "
             "ON t2.id2 = t1.id1 "
-            "ORDER BY t1.playsum DESC LIMIT 10 "
+            "ORDER BY t1.playsum DESC LIMIT 10; "
         )
         resList = []
         for row in results:
@@ -451,7 +449,7 @@ def get_global_top_game_count():
             "GROUP BY id2, avatar, sname "
             " ) t2 "
             "ON t2.id2 = t1.id1 "
-            "ORDER BY t1.gamecount DESC LIMIT 10 "
+            "ORDER BY t1.gamecount DESC LIMIT 10; "
         )
         resList = []
         for row in results:
@@ -485,7 +483,7 @@ def get_global_top_played_percent():
             "GROUP BY id3, avatar, sname "
             " ) t3 "
             "ON t3.id3 = t2.id2 "
-            "ORDER BY percent DESC LIMIT 10"
+            "ORDER BY percent DESC LIMIT 10; "
         )
         resList = []
         for row in results:

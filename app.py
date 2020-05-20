@@ -65,6 +65,11 @@ apiKey = "?key=" +  response.payload.data.decode('UTF-8')
 GET/POST Routes
 --------------------------------
 """
+# Health Check
+@app.route('/', methods=['POST'])
+def health_check():
+    return jsonify(success=True)
+
 # Respond with the list {appid, logo, name} games user owns
 @app.route('/steam/game_list', methods=['POST'])
 def game_list():

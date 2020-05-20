@@ -37,20 +37,15 @@ spec:
         - name: DB_USER
           valueFrom:
             secretKeyRef:
-              name: sql-creds
+              name: postgres-secret
               key: db_user
         - name: DB_PASS
           valueFrom:
             secretKeyRef:
-              name: sql-creds
+              name: postgres-secret
               key: db_password
         - name: DB_NAME
           valueFrom:
             secretKeyRef:
-              name: sql-creds
+              name: postgres-secret
               key: db_name
-        - name: DB_IP
-          valueFrom:
-            secretKeyRef:
-              name: sql-creds
-              key: db_ip

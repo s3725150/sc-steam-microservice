@@ -66,7 +66,7 @@ GET/POST Routes
 --------------------------------
 """
 # Health Check
-@app.route('/', methods=['POST'])
+@app.route('/', methods=['GET'])
 def health_check():
     return jsonify(success=True)
 

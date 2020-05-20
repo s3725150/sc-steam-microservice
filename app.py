@@ -22,6 +22,9 @@ CORS(app, resources={r'/*': {'origins': '*'}})
 db_user = os.environ.get("DB_USER")
 db_pass = os.environ.get("DB_PASS")
 db_name = os.environ.get("DB_NAME")
+db_user = 'postgres'
+db_pass = 'root'
+db_name = 'steam_data'
 
 # The SQLAlchemy engine will help manage interactions, including automatically
 # managing a pool of connections to your database
@@ -341,7 +344,7 @@ def get_played_percent_rank(steamId):
     percent = 0
     with db.connect() as conn:
         results = conn.execute(
-            "SELECT (t1.played / t2.total)*100 AS percent "
+            "SELECT CAST(t1.played AS float) / CAST(t2.total AS float)*100 AS percent "
             "FROM( "
             "SELECT g.steamId AS id1, COUNT(g.appId) AS played "
             "FROM Games g "
@@ -364,7 +367,7 @@ def get_played_percent_rank(steamId):
         results = conn.execute(
             "SELECT COUNT(sid) "
             "FROM( "
-            "SELECT id1 AS sid, (t1.played / t2.total)*100 AS percent  "
+            "SELECT id1 AS sid, CAST(t1.played AS float) / CAST(t2.total AS float)*100 AS percent  "
             "FROM( "
             "SELECT g.steamId AS id1, COUNT(g.appId) AS played "
             "FROM Games g "
@@ -463,7 +466,7 @@ def get_global_top_game_count():
 def get_global_top_played_percent():
     with db.connect() as conn:
         results = conn.execute(
-            "SELECT t3.sname, t3.avatar, (t1.played / t2.total)*100 AS percent "
+            "SELECT t3.sname, t3.avatar, CAST(t1.played AS float) / CAST(t2.total AS float)*100 AS percent "
             "FROM ( "
             "SELECT g.steamId AS id1, COUNT(g.appId) AS played "
             "FROM Games g "

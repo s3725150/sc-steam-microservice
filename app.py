@@ -66,14 +66,10 @@ GET/POST Routes
 --------------------------------
 """
 # Health Check
-@app.route('/', methods=['GET'])
-def root_health_check():
-    return jsonify(success=True)
-
-# Health Check
-@app.route('/steam/', methods=['GET'])
+@app.route('/')
 def health_check():
-    return jsonify(success=True)
+    status_code = flask.Response(status=200)
+    return jsonify(status_code)
 
 # Respond with the list {appid, logo, name} games user owns
 @app.route('/steam/game_list', methods=['POST'])

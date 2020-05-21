@@ -1,7 +1,38 @@
+apiVersion: networking.gke.io/v1beta1
+kind: ManagedCertificate
+metadata:
+  name: steamchat-certificate
+spec:
+  domains:
+    - steamchat-ms.xyz
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: steamchat-ms
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: steamchat-microservices
+    kubernetes.io/ingress.class: "gce-internal"
+    kubernetes.io/ingress.allow-http: "false"
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /steam/*
+        backend:
+          serviceName: serv-steam-ms
+          servicePort: 8080
+      - path: /chat/*
+        backend:
+          serviceName: serv-chat-ms
+          servicePort: 8080
+---
 apiVersion: v1
 kind: Service
 metadata:
   name: serv-steam-ms
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
 spec:
   selector:
     app: steam-ms
@@ -11,20 +42,20 @@ spec:
       port: 8080
       targetPort: 5000
 ---
-apiVersion: networking.k8s.io/v1beta1
-kind: Ingress
+apiVersion: v1
+kind: Service
 metadata:
-  name: steamchat-ms
+  name: serv-chat-ms
   annotations:
-    kubernetes.io/ingress.global-static-ip-name: steamchat-ip
+    cloud.google.com/neg: '{"ingress": true}'
 spec:
-  rules:
-  - http:
-      paths:
-      - path: /*
-        backend:
-          serviceName: serv-steam-ms
-          servicePort: 8080
+  selector:
+    app: chat-ms
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 8090
+      targetPort: 5000
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -45,18 +76,6 @@ spec:
         image: gcr.io/cc-steam-chat/steam-ms:latest
         ports:
         - containerPort: 5000
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 5000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 5000
-          initialDelaySeconds: 30
-          periodSeconds: 10
         env:
         - name: DB_USER
           valueFrom:

@@ -1,7 +1,7 @@
 apiVersion: networking.gke.io/v1beta1
 kind: ManagedCertificate
 metadata:
-  name: steamchat-certificate
+  name: steamchat-cert
 spec:
   domains:
     - steamchat-ms.xyz

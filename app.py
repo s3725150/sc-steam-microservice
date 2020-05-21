@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from google.cloud import spanner, secretmanager
 import requests, sqlalchemy, os
@@ -69,8 +70,10 @@ GET/POST Routes
 @app.route('/')
 def health_check():
     return jsonify('success')
-@app.route('/steam/')
-def steam_health_check():
+
+# Health Check
+@app.route('/health')
+def health_check2():
     return jsonify('success')
 
 # Respond with the list {appid, logo, name} games user owns

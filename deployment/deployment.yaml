@@ -11,21 +11,6 @@ spec:
       port: 8080
       targetPort: 5000
 ---
-apiVersion: networking.k8s.io/v1beta1
-kind: Ingress
-metadata:
-  name: steamchat-ms
-  annotations:
-    kubernetes.io/ingress.global-static-ip-name: steamchat-ip
-spec:
-  rules:
-  - http:
-      paths:
-      - path: /*
-        backend:
-          serviceName: serv-steam-ms
-          servicePort: 8080
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:

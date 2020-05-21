@@ -1,0 +1,23 @@
+apiVersion: networking.gke.io/v1beta1
+kind: ManagedCertificate
+metadata:
+  name: steamchat-cert
+spec:
+  domains:
+    - steamchat-ms.xyz
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: steamchat-ms
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: steamchat-ip
+    networking.gke.io/managed-certificates: steamchat-cert
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /*
+        backend:
+          serviceName: serv-steam-ms
+          servicePort: 8080

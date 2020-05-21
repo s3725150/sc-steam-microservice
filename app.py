@@ -200,7 +200,7 @@ def db_add_games(steamId):
             for i in range(length):
                 appId = prepareString(summary['games'][i]['appid'])
                 name = prepareString(summary['games'][i]['name'])
-                img_logo_url = "http://media.steampowered.com/steamcommunity/public/images/apps/" + appId +"/"+ str(summary['games'][i]['img_logo_url']) + ".jpg"
+                img_logo_url = "https://media.steampowered.com/steamcommunity/public/images/apps/" + appId +"/"+ str(summary['games'][i]['img_logo_url']) + ".jpg"
                 playtime_forever = prepareString(summary['games'][i]['playtime_forever'])
 
                 conn.execute(

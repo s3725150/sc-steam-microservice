@@ -206,7 +206,7 @@ def db_add_games(steamId):
                 conn.execute(
                     "INSERT INTO Games(appId, steamId, name, img_logo_url, playtime) "
                     "VALUES('"+appId+"', '"+steamId+"', '"+name+"', '"+img_logo_url+"', "+playtime_forever+") "
-                    "ON CONFLICT (appId, steamId) DO UPDATE SET playtime = EXCLUDED.playtime; "
+                    "ON CONFLICT (appId, steamId) DO UPDATE SET img_logo_url = EXCLUDED.img_logo_url, playtime = EXCLUDED.playtime; "
                 )
                 print('Inserted / Updated Games for ', steamId)
     return

@@ -3,7 +3,7 @@ info:
   title: SteamChat Endpoints
   description: SteamChat public API with Google Cloud Functions backend
   version: 1.0.0
-host: esp-service-uqd3mltkja-uc.a.run.app
+host: steamchat-api-b3xftqio3a-uc.a.run.app
 schemes:
   - https
 produces:
@@ -14,7 +14,7 @@ paths:
       summary: Get the total number of SteamChat users
       operationId: getTotalUsers
       x-google-backend:
-        address: https://us-central1-cc-steam-chat.cloudfunctions.net/get_total_users
+        address: https://us-central1-steamchat.cloudfunctions.net/get_total_users
         protocol: h2
       responses:
         '200':
@@ -26,7 +26,7 @@ paths:
       summary: Get the combined playtime (hours) of SteamChat users
       operationId: getTotalPlaytime
       x-google-backend:
-        address: https://us-central1-cc-steam-chat.cloudfunctions.net/get_total_playtime
+        address: https://us-central1-steamchat.cloudfunctions.net/get_total_playtime
         protocol: h2
       responses:
         '200':
@@ -38,7 +38,7 @@ paths:
       summary: Get the top 5 most popular games among SteamChat users
       operationId: getPopularGames
       x-google-backend:
-        address: https://us-central1-cc-steam-chat.cloudfunctions.net/get_popular_games
+        address: https://us-central1-steamchat.cloudfunctions.net/get_popular_games
         protocol: h2
       responses:
         '200':

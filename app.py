@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from google.cloud import spanner, secretmanager
+from google.cloud import secretmanager
 import requests, sqlalchemy, os
 
 """

@@ -23,6 +23,7 @@ CORS(app, resources={r'/*': {'origins': '*'}})
 db_user = os.environ.get("DB_USER")
 db_pass = os.environ.get("DB_PASS")
 db_name = os.environ.get("DB_NAME")
+db_ip = os.environ.get("DB_IP")
 
 # The SQLAlchemy engine will help manage interactions, including automatically
 # managing a pool of connections to your database
@@ -34,7 +35,7 @@ db = sqlalchemy.create_engine(
         username=db_user,
         password=db_pass,
         database=db_name,
-        host='10.32.32.3',
+        host=db_ip,
         port='5432'
     ),
     pool_size=5,
@@ -45,13 +46,13 @@ db = sqlalchemy.create_engine(
 
 # Secrets Init
 # GCP project in which to store secrets in Secret Manager.
-project_id = 'cc-steam-chat'
+project_id = 'steamchat'
 
 # Create the Secret Manager client.
 client = secretmanager.SecretManagerServiceClient()
 
 # Build the resource name of the secret version.
-name = client.secret_version_path(project_id, 'steam_api_key', 2)
+name = client.secret_version_path(project_id, 'steam_api_key', 1)
 
 # Access the secret version.
 response = client.access_secret_version(name)

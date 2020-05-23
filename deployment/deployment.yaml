@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
       - name: steam-ms
-        image: gcr.io/cc-steam-chat/steam-ms:latest
+        image: gcr.io/steamchat/steam-ms:latest
         ports:
         - containerPort: 5000
         readinessProbe:
@@ -58,3 +58,8 @@ spec:
             secretKeyRef:
               name: postgres-secret
               key: db_name
+        - name: DB_IP
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: db_ip

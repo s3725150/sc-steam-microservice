@@ -117,6 +117,15 @@ def global_stats():
         res = merge(res, get_global_top_played_percent())
     return jsonify(res)
 
+# Get name and avatar_url from steamId
+@app.route('/steam/get_user_profile', methods=['POST'])
+def get_user_profile():
+    steamId = api_get_steamId(request.form.get("steamId"))
+    res = api_users_summary(steamId)
+    res = res['response']
+    res['players'] = [dict(personaname=key['personaname'],avatar=key['avatar']) for key in res['players']]
+    return jsonify(res)
+
 # Most Popular Game among users
 @app.route('/steam/popular_game', methods=['GET'])
 def popular_game():
@@ -164,7 +173,7 @@ def api_users_summary(steamIdList):
 
 """
 --------------------------------
-Insert/Update Google Spanner DB
+Insert/Update Cloud SQL DB
 --------------------------------
 """
 def db_add_user_and_games(steamId):
